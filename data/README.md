@@ -6,7 +6,7 @@ Ogni run salva una cartella `data/<ambiente>/<run-id>/` con:
 
 | File | Contenuto |
 |---|---|
-| `meta.json` | configurazione (versione, carico, guasto, ripetizione), **hash del commit**, istante del guasto, esito dei criteri di validità |
+| `meta.json` | configurazione (versione, carico, guasto, ripetizione), **hash del commit**, **host** (nome, RAM, CPU, memoria di Docker), istante del guasto, esito dei criteri di validità |
 | `client.csv` | log per richiesta di JMeter: istante di invio, ID ordine, esito, tempo di risposta |
 | `db.csv` | ordini salvati: ID, istante di ricezione (API), istante di commit (database) |
 | `events.csv` | eventi Kubernetes: pod terminato, creato, pronto |

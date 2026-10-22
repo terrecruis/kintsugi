@@ -50,3 +50,5 @@
 - Reset completato (coda vuota, tabella ordini vuota, pod pronti, nessun arretrato).
 - Ritmo realmente inviato entro ±5% di quello previsto.
 - CPU dell'host sotto la soglia fissata in F4: TODO.
+- Nessuno swap dell'host durante il run (decisione 0013).
+- Run eseguito sulla macchina della campagna, con la configurazione di Docker dichiarata (decisione 0013).

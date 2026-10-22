@@ -6,7 +6,9 @@
 
 | Elemento | Valore |
 |---|---|
-| Cluster | kind o k3d, 1-2 nodi, su Docker Desktop (~8 GB) |
+| Cluster | kind, 2 nodi, su Docker Desktop |
+| Macchina di sviluppo | Mac da 8 GB, Docker a 5 GB (solo prove, nessuna misura nel report) |
+| Macchina delle misure | computer del collega, ≥ 16 GB, Docker a ~8 GB (capacità di base, M4, campagna F5) — decisione 0013 |
 | PostgreSQL | volume persistente, fissato al nodo: TODO |
 | RabbitMQ | volume persistente, fissato al nodo: TODO |
 | Generatore di carico | JMeter sul Mac, fuori dal cluster |

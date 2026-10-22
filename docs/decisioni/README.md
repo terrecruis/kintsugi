@@ -18,3 +18,4 @@ Una pagina per decisione, numerata (`0001-titolo.md`), scritta copiando `_templa
 | 0010 | Connessioni al database: (repliche API + worker) × pool < max_connections | da scrivere |
 | 0011 | Linguaggio dell'applicazione (default Python) | da scrivere |
 | 0012 | Un solo repository, V1-V3 come configurazioni e non come branch | da scrivere |
+| [0013](0013-risorse-host.md) | Risorse dell'host: sviluppo su entrambe le macchine, misure su quella da ≥ 16 GB | proposta |
