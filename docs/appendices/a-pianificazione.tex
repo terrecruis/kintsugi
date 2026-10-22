@@ -3,22 +3,63 @@
 
 Il progetto è diviso in nove fasi (F0--F8) su dodici settimane, a partire dal 22/10/2026. Ogni milestone è un punto di controllo: se il criterio non è soddisfatto non si passa alla fase successiva. Il dettaglio delle attività è in \texttt{report/fasi-e-milestone.md}.
 
-\begin{table}[h]
+\section{Milestone}
+
+\begin{table}[htbp]
 \centering
 \caption{Milestone del progetto.}
 \label{tab:milestone}
+\small
 \begin{tabularx}{\linewidth}{@{}llL@{}}
 \toprule
 \textbf{Milestone} & \textbf{Scadenza} & \textbf{Criterio di passaggio} \\
 \midrule
-M1 Architettura e previsioni & 04/11/2026 & Capitoli 2--8 di questo documento scritti, previsioni committate \\
-M2 App minima                & 11/11/2026 & 100 ordini su 100 completati in tutte le versioni; duplicati contati; 0 persi con DB fermo \\
-M3 Kubernetes locale         & 25/11/2026 & V1--V3 sul cluster; un guasto F1 misurato con risoluzione sotto il secondo \\
+M1 Architettura e previsioni & 04/11/2026 & Decisioni scritte, parametri fissati, previsioni committate; approvazione di V4 e V5 da parte del docente \\
+M2 App minima                & 11/11/2026 & 100 ordini su 100 completati in V1--V3; duplicati contati; 0 ordini persi con il database fermo; deadline rispettata \\
+M3 Kubernetes locale         & 25/11/2026 & V1--V3 su kind a tre nodi; un crash F1 iniettato dal nodo e misurato con risoluzione sotto il secondo \\
 M3b Prova AWS                & 02/12/2026 & Cluster EKS creato e distrutto, costi e limiti noti \\
-M4 Banco di prova            & 09/12/2026 & Misure ripetibili entro il 10\%; ritmo entro $\pm 5\%$ durante i guasti \\
-M5 Campagna locale           & 16/12/2026 & 145 run validi; decisione sulla fase AWS \\
+M4 Banco di prova            & 09/12/2026 & Misure ripetibili entro il 10\%; ritmo entro $\pm 5\%$ durante i guasti; failover di V4 e scalatura di V5 verificati \\
+M5 Campagna locale           & 16/12/2026 & 225 run validi; decisione sulla fase AWS \\
 M6 Sessioni AWS              & 30/12/2026 & Esperimenti su EKS fatti, risorse distrutte, costi annotati \\
 M7 Consegna                  & 13/01/2027 & Documento, diario e repository completi \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+\section{Stima dello sforzo}
+
+L'aggiunta di V4, V5 e F7 e le correzioni della revisione (appendice~\ref{app:revisione}) aumentano lo sforzo da circa 265 a circa 306 ore, cioè circa 12,7 ore a settimana a testa.
+
+\begin{table}[htbp]
+\centering
+\caption{Ore stimate per fase.}
+\label{tab:sforzo}
+\small
+\begin{tabularx}{\linewidth}{@{}lccL@{}}
+\toprule
+\textbf{Fase} & \textbf{Piano} & \textbf{v0.3} & \textbf{Motivo della variazione} \\
+\midrule
+F0 Preparazione       & 10 & 10 & -- \\
+F1 Architettura       & 25 & 32 & Nuovi ADR, previsioni per V4, V5 e F7 \\
+F2 App minima         & 18 & 20 & Deadline, duplicati registrati nel database \\
+F3 Kubernetes locale  & 38 & 48 & Cluster a tre nodi, CloudNativePG, KEDA \\
+F4 Banco di prova     & 45 & 55 & Iniezione dal nodo, F7, reset di V4 e V5 \\
+F5 Campagna locale    & 40 & 48 & 225 run invece di 145 \\
+F6 AWS                & 40 & 40 & -- \\
+F7 Analisi            & 22 & 26 & Analisi di RQ4 e RQ5 \\
+F8 Report e orale     & 27 & 27 & -- \\
+\midrule
+\textbf{Totale}       & \textbf{265} & \textbf{306} & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Priorità e piano di taglio}
+
+\begin{description}
+  \item[Indispensabile] Protocollo di misura; V1--V3 su Kubernetes locale; guasti F1--F4 e F7; RQ1--RQ3; decisioni, previsioni, minacce alla validità; diario.
+  \item[Auspicabile] V4 (RQ4); V5 (RQ5); guasto F5; sessioni AWS (RQ6).
+  \item[Facoltativo] Guasto F6; V4 su AWS con standby in un'altra zona.
+\end{description}
+
+\textbf{Ordine dei tagli in caso di ritardo:} F6 $\rightarrow$ V5 $\rightarrow$ F5 $\rightarrow$ sessioni AWS ridotte a una $\rightarrow$ V4 ridotta alla sola V4a. Non si tagliano mai il protocollo, le 10 ripetizioni dei guasti F1--F4 e F7, RQ1--RQ3, le previsioni e il diario.

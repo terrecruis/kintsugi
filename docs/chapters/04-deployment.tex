@@ -3,42 +3,88 @@
 
 \section{Ambiente A -- Kubernetes locale}
 
-Cluster kind a due nodi. PostgreSQL e RabbitMQ hanno un volume persistente e sono fissati a un nodo; API e worker possono stare su entrambi. Il carico è generato da JMeter, fuori dal cluster.
+Cluster kind con \textbf{tre nodi}: un nodo di controllo e due nodi worker (figura~\ref{fig:deploy-locale}). Con un solo nodo worker tutti i pod starebbero sullo stesso nodo: non si potrebbero separare primario e standby di V4 né simulare la perdita di un nodo (F6).
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[node distance=0.5cm]
-\node[box] (api) {API};
-\node[box, right=of api] (worker) {Worker};
-\node[box, below=of api] (db) {PostgreSQL\\+ volume};
-\node[box, below=of worker] (mq) {RabbitMQ\\+ volume};
-\begin{scope}[on background layer]
-  \node[draw=unina, dashed, rounded corners, fit=(api)(worker)(db)(mq), inner sep=10pt,
-        label={[font=\small\color{unina}]above:Cluster kind (2 nodi)}] (cluster) {};
-\end{scope}
-\node[box, left=1.6cm of cluster] (jmeter) {JMeter\\(host)};
-\draw[freccia] (jmeter) -- (cluster);
-\end{tikzpicture}
-\caption{Ambiente A: cluster locale.}
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=0.35cm]
+\node[box] (pg) {PostgreSQL\\+ volume};
+\node[box, below=of pg] (mq) {RabbitMQ\\+ volume};
+\node[box, below=of mq] (a1) {API, worker};
+\node[draw=unina, dashed, rounded corners, fit=(pg)(mq)(a1), inner sep=8pt,
+      label={[font=\small\color{unina}]above:worker-1}] (w1) {};
+\node[box, right=2.2cm of pg] (sb) {Standby\\{\scriptsize (solo V4)}};
+\node[box, below=of sb] (a2) {API, worker};
+\node[draw=unina, dashed, rounded corners, fit=(sb)(a2), inner sep=8pt,
+      label={[font=\small\color{unina}]above:worker-2}] (w2) {};
+\node[box, left=2.4cm of pg] (cp) {API server,\\scheduler, etcd};
+\node[box, below=of cp] (np) {Punto di\\ingresso};
+\node[draw=unina, dashed, rounded corners, fit=(cp)(np), inner sep=8pt,
+      label={[font=\small\color{unina}]above:control-plane}] (c) {};
+\node[box, below=1.4cm of np] (jm) {JMeter\\(host)};
+\draw[freccia] (jm) -- (np);
+\draw[freccia] (np.east) -- (w1.west);
+\draw[freccia, dashed] (pg) -- node[above, font=\scriptsize] {replica (V4)} (sb);
+\end{tikzpicture}}
+\caption{Ambiente A: cluster kind a tre nodi.}
 \label{fig:deploy-locale}
 \end{figure}
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\caption{Macchine dell'ambiente A (decisione D0013).}
+\caption{Posizionamento dei componenti nell'ambiente A.}
+\label{tab:posizionamento}
+\begin{tabularx}{\linewidth}{@{}llL@{}}
+\toprule
+\textbf{Componente} & \textbf{Nodo} & \textbf{Motivo} \\
+\midrule
+Control plane & control-plane & Separato dai carichi; nessun esperimento lo guasta \\
+Punto di ingresso (NodePort) & control-plane & La porta esposta all'host non dipende dai nodi che si guastano \\
+PostgreSQL, RabbitMQ (V1--V3, V5) & worker-1 & Volume locale legato al nodo (D0006) \\
+PostgreSQL primario / standby (V4) & worker-1 / worker-2 & Anti-affinità: un guasto di nodo non colpisce entrambe le copie \\
+API, worker & worker-1, worker-2 & Distribuiti sui due nodi \\
+Toxiproxy & worker-1 & Accanto al database \\
+JMeter & host & Fuori dal cluster \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Macchine dell'ambiente A (D0013).}
 \label{tab:macchine}
 \begin{tabularx}{\linewidth}{@{}llL@{}}
 \toprule
 \textbf{Macchina} & \textbf{Memoria a Docker} & \textbf{Ruolo} \\
 \midrule
 Mac di F.~Terrecuso, 8 GB & 5 GB & Sviluppo e prove; nessuna misura entra nei risultati \\
-Computer di G.~Vellotti, $\geq$ 16 GB & $\sim$8 GB & Capacità di base, verifica M4, campagna di misura \\
+Computer di G.~Vellotti, $\geq$ 16 GB & $\sim$8 GB & Capacità di base, verifica di M4, campagna di misura, tutte le prove di V4 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \section{Ambiente B -- AWS}
 
-EKS con nodi su 2--3 zone, bilanciatore ALB. API e worker sono distribuiti sulle zone; PostgreSQL e RabbitMQ stanno in una sola zona, perché i volumi EBS sono legati alla zona. Il generatore di carico gira su un'istanza EC2 nella stessa regione, così la rete domestica non entra nelle misure.
+EKS con nodi su 2--3 zone. Il bilanciatore è un ALB gestito dall'AWS Load Balancer Controller, con target di tipo IP e \textit{pod readiness gate}: un pod riceve traffico dall'ALB solo dopo che l'ALB stesso lo considera sano. PostgreSQL e RabbitMQ stanno in una sola zona, perché i volumi EBS sono legati alla zona. JMeter gira su un'istanza EC2 nella stessa regione, così la rete domestica non entra nelle misure. Su AWS si ripete un sottoinsieme degli esperimenti: V2 e V3 sotto W1 e W2, guasti F1, F2, F3 e F6.
 
-\todo{diagramma di deployment AWS e parametri dell'ALB (controlli di salute, deregistration delay), da fissare in F1 e verificare nella prova di S6}
+\subsection{Differenze non eliminabili}
+\label{sec:differenze-aws}
+
+\begin{table}[htbp]
+\centering
+\caption{Differenze tra i due ambienti che i parametri non possono annullare.}
+\label{tab:differenze}
+\begin{tabularx}{\linewidth}{@{}lLLL@{}}
+\toprule
+\textbf{Aspetto} & \textbf{Locale} & \textbf{AWS} & \textbf{Effetto atteso} \\
+\midrule
+Rilevamento dal bilanciatore & Readiness, periodo minimo 1 s & Controlli dell'ALB, intervallo minimo 5 s, soglia minima 2 & Rilevamento più lento su AWS \\
+Uscita dal traffico & Aggiornamento degli endpoint di kube-proxy & Deregistrazione del target (300 s di default, portata a pochi secondi) & Richieste ancora instradate a un pod uscente \\
+Rete & Stessa macchina & Rete tra zone & Latenza di base più alta \\
+Hardware & Host condiviso & Nodi separati & Repliche davvero indipendenti \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Per questo RQ6 chiede di \emph{attribuire} le differenze, non di ottenere risultati identici. I valori dell'ALB vanno verificati nella prova di S6.

@@ -1,22 +1,50 @@
 \chapter{Protocollo di misura}
 \label{cap:misura}
 
-\section{Definizioni}
+\section{Indicatori (SLI)}
+\label{sec:sli}
 
 \begin{description}
 \item[Richiesta riuscita] Risposta corretta entro il timeout comune del client.
 \item[Disponibilità di accettazione] Frazione di secondi in cui almeno il 99\% delle richieste riesce, vista dal client.
-\item[Disponibilità di completamento] Frazione di secondi in cui almeno il 99\% degli ordini \emph{ricevuti} in quel secondo è salvato nel database entro un limite fissato. Per V3 è la misura che conta: con il database fermo l'API continua ad accettare, ma nessun ordine viene completato.
+\item[Disponibilità di completamento] Frazione di secondi in cui almeno il 99\% degli ordini \emph{ricevuti} in quel secondo è salvato nel database entro 2 s. Per V3 e V5 è la misura che conta: con il database fermo l'API continua ad accettare, ma nessun ordine viene completato.
 \item[Ripristinato] Primo istante da cui seguono 5 secondi consecutivi disponibili sia in accettazione sia in completamento. Non coincide con il riavvio del pod.
 \item[Downtime per guasto] Tempo tra il guasto e il ripristino, per accettazione e per completamento.
-\item[Tempo end-to-end] Istante di commit nel database meno istante di ricezione nell'API, entrambi da orologi del cluster. È la metrica comune alle tre versioni.
+\item[Tempo end-to-end] \texttt{ts\_scrittura} meno \texttt{ts\_ricezione}, entrambi da orologi del cluster (D0005). È la metrica comune a tutte le versioni.
+\item[Ordini persi per failover] (V4) Ordini confermati al client e assenti dal database dopo il failover: è la misura sperimentale della perdita di dati (RPO).
+\item[Costo] (V5 e V3) Worker-secondi consumati durante il run.
 \end{description}
+
+\section{Obiettivi (SLO) e budget di errore}
+
+Gli obiettivi sono fissati da D0017: 99,9\% su 30 giorni per la disponibilità di accettazione e per quella di completamento, pari a un budget di errore di 43,2 minuti al mese. Servono a leggere ogni guasto come quota di budget consumata e a confrontare le versioni su un'unica scala.
+
+\section{Fonti dei dati}
+
+\begin{table}[htbp]
+\centering
+\caption{Fonti dei dati, orologio di riferimento e risoluzione.}
+\label{tab:fonti}
+\begin{tabularx}{\linewidth}{@{}lLll@{}}
+\toprule
+\textbf{Fonte} & \textbf{Cosa fornisce} & \textbf{Orologio} & \textbf{Risoluzione} \\
+\midrule
+Log di JMeter & Invio, esito e latenza di ogni richiesta & host & ms \\
+Database & \texttt{ts\_ricezione}, \texttt{ts\_scrittura} di ogni ordine; duplicati & cluster & $\mu$s \\
+Script di iniezione & Istante del guasto & host e cluster & ms \\
+Eventi Kubernetes & Pod terminato, creato, pronto & cluster & s \\
+Prometheus & Coda, riprove, dead-letter, numero di worker, CPU, memoria & cluster & 5 s \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Downtime e tempi di ripristino si calcolano dalle prime tre fonti. Prometheus serve solo come contesto: la sua risoluzione è troppo grossolana per guasti che durano pochi secondi.
 
 \section{Categorie degli ordini}
 
-Ogni ordine inviato, identificato dal suo ID, cade in esattamente una delle prime cinque categorie della tabella~\ref{tab:categorie}.
+Ogni ordine inviato, identificato dal suo ID, cade in esattamente una delle prime cinque categorie della tabella~\ref{tab:categorie}. I duplicati si registrano in una tabella del database, non in contatori in memoria, che si azzerano quando il pod si riavvia.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Categorie degli ordini.}
 \label{tab:categorie}
@@ -34,43 +62,66 @@ Duplicati                  & --                & rifiutato dal vincolo di unicit
 \end{tabularx}
 \end{table}
 
-\section{Carichi e matrice degli esperimenti}
+\section{Carichi}
 
-Il carico è generato a ritmo costante, così un rallentamento del sistema non riduce le richieste inviate e non si nasconde (\textit{coordinated omission}). Tre profili: \textbf{W1} costante, \textbf{W2} picco improvviso, \textbf{W3} sovraccarico prolungato, fissati rispetto alla capacità misurata.
+Il carico segue un \textbf{modello aperto}: gli arrivi seguono un programma prefissato, indipendente dalle risposte, così un rallentamento del sistema non riduce le richieste inviate e non si nasconde (\textit{coordinated omission}). In JMeter si usa l'\textit{Open Model Thread Group}, disponibile dalla versione 5.5. Rispetto alla capacità $C$ misurata in F4:
 
-\begin{table}[h]
+\begin{description}[leftmargin=1.2cm, style=sameline]
+  \item[W1] costante al 50\% di $C$;
+  \item[W2] picco: dal 50\% al 150\% di $C$ per 60 s, poi di nuovo al 50\%;
+  \item[W3] sovraccarico: 120\% di $C$ per 3 minuti.
+\end{description}
+
+\section{Matrice degli esperimenti}
+
+\begin{table}[htbp]
 \centering
 \caption{Matrice degli esperimenti.}
 \label{tab:matrice}
-\begin{tabular}{@{}lccc@{}}
+\small
+\begin{tabularx}{\linewidth}{@{}Lccc@{}}
 \toprule
 \textbf{Gruppo} & \textbf{Configurazioni} & \textbf{Ripetizioni} & \textbf{Run} \\
 \midrule
-Senza guasto (3 versioni $\times$ 3 carichi) & 9  & 5  & 45 \\
-Con guasto (F1--F5)                          & 10 & 10 & 100 \\
+Senza guasto: V1--V3 $\times$ W1--W3 & 9 & 5 & 45 \\
+Senza guasto: V3 sotto W2, ripetizioni aggiuntive per RQ5 & 1 & +5 & 5 \\
+Senza guasto: V3 con 10 worker fissi sotto W2 & 1 & 10 & 10 \\
+Senza guasto: V5 sotto W2 e sotto W3 & 2 & 10 e 5 & 15 \\
+Senza guasto: V4a e V4s sotto W1 & 2 & 5 & 10 \\
+Con guasto: F1 (V1--V3), F2, F3 (V3), F4 (V1--V3), F5 (V2, V3) & 10 & 10 & 100 \\
+Con guasto: F4 su V4a e V4s & 2 & 10 & 20 \\
+Con guasto: F7 su V2, sonde rapide e predefinite & 2 & 10 & 20 \\
 \midrule
-\textbf{Totale}                              &    &    & \textbf{145} \\
+\textbf{Totale} & & & \textbf{225} \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
+
+Le configurazioni su cui si basano le conclusioni hanno 10 ripetizioni; quelle di contesto ne hanno 5. Con circa 5,5 minuti per run servono circa 21 ore di macchina, eseguite in blocchi automatici. F6, se resta tempo, aggiunge 20 run.
 
 \section{Struttura di un run}
 
 \begin{enumerate}
-  \item \textbf{Reset}: coda vuota, tabella ordini vuota, pod pronti.
+  \item \textbf{Reset}: pod ricreati (azzera il backoff dei riavvii), tabella degli ordini svuotata, coda vuota, nessuna latenza attiva su Toxiproxy; per V4 primario su worker-1 e standby allineato; per V5 worker al minimo. Lo script verifica queste condizioni e non parte se non sono soddisfatte.
   \item \textbf{Riscaldamento}: un minuto di carico, escluso dalle statistiche.
-  \item \textbf{Guasto}: iniettato al minuto 2, istante registrato.
-  \item \textbf{Osservazione}: fino al ripristino più 2 minuti, al massimo 10 minuti.
-  \item \textbf{Esportazione} dei dati di client, database ed eventi.
+  \item \textbf{Guasto}: iniettato al minuto 2, con l'istante registrato.
+  \item \textbf{Osservazione}: fino al ripristino più 2 minuti, al massimo 10 minuti (15 per F6). Un run senza ripristino entro il limite è valido e registrato come ``non ripristinato''.
+  \item \textbf{Esportazione} dei dati di client, database, eventi e metriche.
 \end{enumerate}
+
+I run si eseguono in ordine casuale, mescolando configurazioni e ripetizioni, così un eventuale degrado progressivo dell'ambiente non si concentra su una sola configurazione.
 
 \section{Validità di un run}
 \label{sec:validita}
 
 \begin{itemize}
-  \item Reset completato.
+  \item Reset completato e stato iniziale verificato (topologia di V4, numero di worker di V5).
   \item Ritmo realmente inviato entro $\pm 5\%$ di quello previsto.
   \item CPU dell'host sotto la soglia fissata in F4.
   \item Nessuno swap dell'host durante il run (D0013).
   \item Run eseguito sulla macchina della campagna (D0013).
 \end{itemize}
+
+\section{Analisi statistica}
+
+Per ogni configurazione si riportano mediana e intervallo interquartile; per quelle con 10 ripetizioni anche l'intervallo di confidenza al 95\% calcolato con il bootstrap, e la differenza minima che il numero di ripetizioni permette di distinguere. Una previsione è confermata se cade nell'intervallo di confidenza; altrimenti la differenza va spiegata. Le scelte arbitrarie del protocollo (soglia del 99\%, finestra di 5 s per ``ripristinato'') si verificano con un'analisi di sensibilità: il ripristino si ricalcola anche con finestre di 3 s e 10 s.

@@ -27,6 +27,7 @@
 \midrule
 0.1 & 22/10/2026 & Prima bozza: obiettivi, architettura V1--V3, ambienti, modello dei guasti, definizioni di misura. \\
 0.2 & 22/10/2026 & Riorganizzazione in forma di documentazione: frontespizio, scheda, acronimi, capitoli, decisioni in formato ADR, appendice di pianificazione. \\
+0.3 & 22/10/2026 & Aggiunte V4 (database replicato con failover) e V5 (autoscaling sulla coda) e il guasto F7 (blocco). Revisione critica del piano: metodo di iniezione, timestamp, sonde, deadline, SLO e budget di errore, cluster a tre nodi, minacce alla validità, tabella dei parametri. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -35,6 +36,6 @@
 
 \begin{itemize}
   \item Le parti \todo{in rosso} sono ancora da scrivere: il documento cresce insieme al progetto, milestone dopo milestone.
-  \item Le decisioni architetturali sono identificate da \textbf{D}\textit{nnnn} (capitolo~\ref{cap:decisioni}); i guasti da \textbf{F1}--\textbf{F6}; i carichi da \textbf{W1}--\textbf{W3}; le milestone da \textbf{M1}--\textbf{M7}.
+  \item Le decisioni architetturali sono identificate da \textbf{D}\textit{nnnn} (capitolo~\ref{cap:decisioni}); le versioni da \textbf{V1}--\textbf{V5}; le domande di ricerca da \textbf{RQ1}--\textbf{RQ6}; i guasti da \textbf{F1}--\textbf{F7}; i carichi da \textbf{W1}--\textbf{W3}; le milestone da \textbf{M1}--\textbf{M7}.
   \item Il diario delle operazioni, richiesto come consegna separata, è nel repository in \texttt{report/diario/}.
 \end{itemize}

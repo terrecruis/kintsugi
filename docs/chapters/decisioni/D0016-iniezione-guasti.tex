@@ -1,0 +1,18 @@
+\begin{decisione}{D0016}{Metodo di iniezione dei guasti}{Proposta}{22/10/2026}
+
+\contesto
+Il piano iniziale iniettava i guasti con \texttt{kubectl delete pod}. Ci sono quattro problemi:
+\begin{enumerate}
+  \item la cancellazione è una terminazione ordinata seguita da un pod nuovo, non un crash;
+  \item inviare un segnale dall'interno del container non funziona, perché il kernel ignora \texttt{SIGKILL} e \texttt{SIGSTOP} diretti a PID~1 dallo stesso namespace;
+  \item con soli crash Kubernetes rileva il guasto subito, quindi i parametri delle sonde quasi non contano e RQ3 resterebbe senza risposta;
+  \item Kubernetes ritarda con un backoff esponenziale i riavvii di un container che va in crash ripetutamente, e il ritardo accumulato in un run si trascinerebbe nel successivo.
+\end{enumerate}
+
+\scelta
+Crash con \texttt{SIGKILL} e blocco con \texttt{SIGSTOP}, inviati dal namespace del nodo kind (sezione~\ref{sec:iniezione}). Si aggiunge il guasto F7 (blocco dell'API), misurato con due configurazioni delle sonde. Lo script registra l'istante del guasto sia sull'orologio dell'host sia su quello del cluster. Toxiproxy è sempre nel percorso verso il database di V2 e V3. Il reset di ogni run ricrea i pod, azzerando lo stato del backoff.
+
+\conseguenze
+I guasti sono realistici e i run sono indipendenti tra loro. Lo script dipende da kind; su EKS lo stesso guasto si ottiene da un pod privilegiato sul nodo. F7 aggiunge 20 run alla campagna.
+
+\end{decisione}

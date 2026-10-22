@@ -1,9 +1,9 @@
 \chapter{Decisioni architetturali}
 \label{cap:decisioni}
 
-Ogni decisione rilevante è documentata come \textit{Architecture Decision Record} (ADR): contesto, decisione presa, conseguenze. Una decisione non si cancella: se cambia, se ne scrive una nuova che la sostituisce. Ogni ADR è un file in \texttt{docs/chapters/decisioni/}.
+Ogni decisione rilevante è documentata come \textit{Architecture Decision Record} (ADR): contesto, decisione presa, conseguenze. Una decisione non si cancella: se cambia, se ne scrive una nuova che la sostituisce. Ogni ADR è un file in \texttt{docs/chapters/decisioni/}. Le decisioni \emph{proposte} diventano \emph{accettate} quando entrambi gli autori le hanno discusse; D0014 e D0015 richiedono anche l'approvazione del docente, perché estendono la traccia.
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
 \caption{Registro delle decisioni.}
 \label{tab:registro-decisioni}
@@ -13,20 +13,68 @@ Ogni decisione rilevante è documentata come \textit{Architecture Decision Recor
 \midrule
 D0001 & Sincrono contro asincrono e compromessi & da scrivere \\
 D0002 & Configurazione di RabbitMQ & da scrivere \\
-D0003 & Politica di riprova dei worker & da scrivere \\
-D0004 & Idempotenza e conteggio dei duplicati & da scrivere \\
-D0005 & Timestamp di ricezione e di commit & da scrivere \\
+D0003 & Politica di riprova dei worker (vincoli in appendice~\ref{app:revisione}) & da scrivere \\
+D0004 & Idempotenza e conteggio dei duplicati (vincoli in appendice~\ref{app:revisione}) & da scrivere \\
+D0005 & Timestamp di ricezione e di scrittura & proposta \\
 D0006 & Posizione dei dati (nodo e zona) & da scrivere \\
-D0007 & Repliche e parametri dei controlli di salute & da scrivere \\
-D0008 & Timeout comune del client & da scrivere \\
+D0007 & Semantica e parametri dei controlli di salute & proposta \\
+D0008 & Timeout del client e deadline lato server & proposta \\
 D0009 & Generatore di carico su AWS & da scrivere \\
 D0010 & Connessioni al database & da scrivere \\
 D0011 & Linguaggio dell'applicazione & da scrivere \\
 D0012 & Un repository, versioni come configurazioni & accettata \\
 D0013 & Risorse dell'host & proposta \\
+D0014 & V4: database replicato con failover & proposta \\
+D0015 & V5: autoscaling dei worker sulla coda & proposta \\
+D0016 & Metodo di iniezione dei guasti & proposta \\
+D0017 & Indicatori, obiettivi e budget di errore & proposta \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+\section{Tabella unica dei parametri}
+\label{sec:parametri}
+
+Valori proposti, identici in tutte le versioni e nei due ambienti salvo dove indicato. Si confermano in F1, si verificano in F3, e ogni modifica passa da una decisione.
+
+\begin{table}[htbp]
+\centering
+\caption{Parametri di salute, timeout, riprova e scalatura.}
+\label{tab:parametri}
+\small
+\begin{tabularx}{\linewidth}{@{}Lll@{}}
+\toprule
+\textbf{Parametro} & \textbf{Valore proposto} & \textbf{Decisione} \\
+\midrule
+Repliche dell'API (V2--V5) & 3 & D0007 \\
+Worker (V3) & 3 & D0015 \\
+Worker (V5): minimo / massimo & 1 / 10 & D0015 \\
+Sonde, configurazione \emph{rapida}: readiness periodo / soglia & 1 s / 2 & D0007 \\
+Sonde, configurazione \emph{rapida}: liveness periodo / soglia & 2 s / 3 & D0007 \\
+Sonde, configurazione \emph{predefinita} (solo F7): readiness e liveness & 10 s / 3 & D0007 \\
+Timeout di ogni sonda & 1 s & D0007 \\
+Timeout del client & 2 s & D0008 \\
+Deadline lato server (API) & 1,5 s & D0008 \\
+\texttt{statement\_timeout} di PostgreSQL & 1 s & D0008 \\
+Riprova dei worker: attesa iniziale / fattore / massimo & 0,5 s / 2 / 10 s & D0003 \\
+Riprova dei worker: durata totale minima & 120 s & D0003 \\
+Pool di connessioni per pod & 5 & D0010 \\
+\texttt{max\_connections} di PostgreSQL & 100 & D0010 \\
+KEDA: intervallo di lettura / ordini in coda per worker & 5 s / 50 & D0015 \\
+F5: latenza aggiunta / durata & 200 ms / 60 s & D0016 \\
+ALB: intervallo / soglie / deregistration delay & 5 s / 2 / 5 s & D0007 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Verifica delle connessioni nel caso peggiore (V5 al massimo): $(3 + 10) \times 5 = 65 < 100$.
+
+\input{chapters/decisioni/D0005-timestamp}
+\input{chapters/decisioni/D0007-controlli-salute}
+\input{chapters/decisioni/D0008-timeout-deadline}
 \input{chapters/decisioni/D0012-un-repository}
 \input{chapters/decisioni/D0013-risorse-host}
+\input{chapters/decisioni/D0014-database-replicato}
+\input{chapters/decisioni/D0015-autoscaling}
+\input{chapters/decisioni/D0016-iniezione-guasti}
+\input{chapters/decisioni/D0017-slo}

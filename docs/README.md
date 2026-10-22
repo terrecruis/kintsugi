@@ -17,10 +17,11 @@ docs/
     scheda-documento.tex   scheda, storico delle revisioni, convenzioni
     acronimi.tex           acronimi e termini
   chapters/
-    01-introduzione.tex … 08-previsioni.tex
-    decisioni/             un ADR per file (D0012-..., D0013-...)
+    01-introduzione.tex … 09-validita.tex
+    decisioni/             un ADR per file (D0005-..., D0007-..., ...)
   appendices/
-    a-pianificazione.tex   fasi e milestone
+    a-pianificazione.tex   milestone, stima dello sforzo, piano di taglio
+    b-revisione.tex        revisione critica del piano: problemi e correzioni
   figures/                 immagini esterne (logo del frontespizio)
 ```
 

@@ -1,0 +1,17 @@
+\begin{decisione}{D0007}{Semantica e parametri dei controlli di salute}{Proposta}{22/10/2026}
+
+\contesto
+Le sonde decidono quando un'istanza riceve traffico (\textit{readiness}) e quando va riavviata (\textit{liveness}). Un errore comune è far dipendere la liveness dal database: durante un crash del database tutte le istanze dell'API fallirebbero la sonda e verrebbero riavviate insieme, trasformando il guasto di un componente in un guasto a cascata.
+
+\scelta
+\begin{itemize}
+  \item \textbf{Liveness}: verifica solo che il processo risponda, con un endpoint che non tocca dipendenze.
+  \item \textbf{Readiness}: verifica che l'istanza abbia completato l'avvio; non dipende da database né broker. I guasti delle dipendenze si gestiscono nell'applicazione, rispondendo subito con un errore entro la deadline (D0008).
+  \item Due configurazioni dei parametri (tabella~\ref{tab:parametri}): \emph{rapida}, usata in tutti gli esperimenti, e \emph{predefinita} di Kubernetes, usata solo con F7 per misurare quanto il rilevamento dipende dai parametri.
+  \item Su AWS i controlli dell'ALB sono portati al minimo consentito e si usa il pod readiness gate.
+\end{itemize}
+
+\conseguenze
+Un guasto del database non provoca riavvii dell'API, e il client vede errori rapidi invece di timeout. L'alternativa (readiness legata al database) farebbe uscire tutte le istanze insieme dal bilanciatore: è stata scartata perché nasconde il comportamento dell'applicazione dietro quello di Kubernetes.
+
+\end{decisione}

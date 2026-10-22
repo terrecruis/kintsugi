@@ -1,0 +1,17 @@
+\begin{decisione}{D0017}{Indicatori, obiettivi e budget di errore}{Proposta}{22/10/2026}
+
+\contesto
+Il piano iniziale proiettava la disponibilità moltiplicando quelle dei singoli componenti. Ma il downtime si misura sul sistema intero, non per componente: combinare le due cose conterebbe due volte gli stessi effetti, o li ignorerebbe. Serve un unico quadro per passare dalle misure per guasto a una disponibilità attesa.
+
+\scelta
+Si adotta il modello della Site Reliability Engineering.
+\begin{itemize}
+  \item \textbf{Indicatori (SLI)}: disponibilità di accettazione, disponibilità di completamento, tempo end-to-end (sezione~\ref{sec:sli}).
+  \item \textbf{Obiettivi (SLO)}: 99,9\% su 30 giorni per entrambe le disponibilità, cioè un budget di errore di 43,2 minuti al mese.
+  \item \textbf{Proiezione}: indisponibilità attesa $U = \sum_i \lambda_i \, D_i$, con $\lambda_i$ frequenza ipotizzata del guasto $i$ e $D_i$ downtime misurato; disponibilità $A = 1 - U$.
+\end{itemize}
+
+\conseguenze
+Ogni guasto si legge come quota di budget consumata, e le versioni si confrontano su un'unica scala. Le frequenze dei guasti sono ipotesi dichiarate (capitolo~\ref{cap:previsioni}). La formula dei componenti in serie, $A_{tot} = \prod_i A_i$, resta come verifica teorica, non come metodo di proiezione.
+
+\end{decisione}

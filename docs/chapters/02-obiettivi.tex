@@ -3,27 +3,42 @@
 
 \section{Obiettivo}
 
-Misurare, con esperimenti ripetibili, come le scelte architetturali (repliche, coda asincrona, orchestrazione) cambiano l'impatto dei guasti, le prestazioni e il recupero di un servizio, e confrontare le misure con previsioni scritte \emph{prima} di misurare.
+Misurare, con esperimenti ripetibili, come le scelte architetturali (ridondanza dei componenti senza stato e con stato, comunicazione asincrona, elasticità, orchestrazione) cambiano l'impatto dei guasti su disponibilità, latenza, durabilità e ripristino di un servizio, e confrontare le misure con previsioni scritte \emph{prima} di misurare.
 
 \section{Domande di ricerca}
 
-\begin{table}[h]
+\begin{table}[htbp]
 \centering
-\caption{Domande di ricerca.}
+\caption{Domande di ricerca e versioni confrontate.}
 \label{tab:rq}
-\begin{tabularx}{\linewidth}{@{}lL@{}}
+\begin{tabularx}{\linewidth}{@{}lLl@{}}
 \toprule
-\textbf{ID} & \textbf{Domanda} \\
+\textbf{ID} & \textbf{Domanda} & \textbf{Confronto} \\
 \midrule
-RQ1 & Quanto downtime e quante richieste fallite produce ogni guasto passando da 1 a N repliche? Quanto si discostano le misure dalle previsioni? Che disponibilità ne risulta con un MTBF ipotizzato? \\
-RQ2 & Sincrono contro asincrono, a parità di carico e timeout: come cambiano tempo end-to-end, disponibilità di completamento, ordini persi o duplicati e recupero, sotto picchi e guasti? \\
-RQ3 & Quanto ci mette il servizio a tornare effettivamente operativo dopo un guasto, e quanto dipende dai controlli di salute e dal tipo di componente (con o senza stato)? \\
-RQ4 & Con parametri allineati, i risultati locali si ripetono su AWS? Dove cambiano e perché? \\
-RQ5 & \textit{(opzionale)} Un autoscaling basato sulla lunghezza della coda assorbe meglio un picco? \\
+RQ1 & \textbf{Ridondanza senza stato.} Quanto downtime e quante richieste fallite produce ogni guasto passando da una a N repliche dell'API? & V1 / V2 \\
+RQ2 & \textbf{Sincrono contro asincrono.} A parità di carico e timeout, come cambiano tempo end-to-end, disponibilità di completamento, ordini persi o duplicati e tempo di recupero, sotto picchi e guasti? & V2 / V3 \\
+RQ3 & \textbf{Rilevamento e ripristino.} Quanto tempo passa tra il guasto e il servizio di nuovo operativo, e quanto dipende dal tipo di guasto (crash o blocco), dai parametri dei controlli di salute e dal tipo di componente (con o senza stato)? & tutte \\
+RQ4 & \textbf{Ridondanza con stato.} Un database replicato con failover automatico quanto riduce il downtime di un crash del database? Quanti ordini confermati si perdono con replica asincrona, e quanta latenza costa la replica sincrona? & V2 / V4 \\
+RQ5 & \textbf{Elasticità.} Un autoscaling dei worker basato sulla lunghezza della coda assorbe un picco meglio di un numero fisso di worker, a parità di risorse consumate? & V3 / V5 \\
+RQ6 & \textbf{Trasferibilità.} Quali risultati locali si ripetono su AWS, quali cambiano, e a quali differenze di piattaforma si possono attribuire? & locale / AWS \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+RQ6 è formulata come attribuzione delle differenze, non come replica esatta: alcuni parametri non si possono allineare tra i due ambienti (sezione~\ref{sec:differenze-aws}).
+
+\section{Ipotesi}
+
+Le ipotesi qualitative guidano il disegno degli esperimenti; i valori numerici sono nel capitolo~\ref{cap:previsioni}.
+
+\begin{description}[leftmargin=1.2cm, style=sameline]
+  \item[H1] V2 riduce di ordini di grandezza il downtime del crash di un'istanza dell'API rispetto a V1, ma non quello del crash del database, che resta un punto unico di guasto.
+  \item[H2] Durante un crash del database V3 mantiene la disponibilità di accettazione ma perde quella di completamento; dopo il ripristino il tempo end-to-end cresce finché l'arretrato non è smaltito.
+  \item[H3] Con un crash il rilevamento è quasi immediato e i parametri delle sonde contano poco; con un blocco il downtime cresce linearmente con periodo $\times$ soglia della sonda.
+  \item[H4] V4 riduce il downtime del crash del database al tempo di failover. Con replica asincrona si perdono ordini in numero proporzionale al ritardo di replica; con replica sincrona nessuno, al prezzo di una latenza più alta.
+  \item[H5] V5 smaltisce un picco prima di V3 con lo stesso numero minimo di worker, consumando meno risorse di V3 con il numero massimo, ma reagisce con un ritardo pari al ciclo di scalatura.
+\end{description}
+
 \section{Fuori ambito}
 
-Portabilità e vendor lock-in; cluster di RabbitMQ e replica del database; multi-zona per i componenti con stato; multi-cloud; ottimizzazione del codice.
+Broker replicato (cluster di RabbitMQ); database multi-zona su AWS (V4 si misura in locale, salvo tempo residuo a M5); multi-cloud e vendor lock-in; sicurezza; ottimizzazione del codice.

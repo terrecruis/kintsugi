@@ -1,0 +1,16 @@
+\begin{decisione}{D0005}{Timestamp di ricezione e di scrittura}{Proposta}{22/10/2026}
+
+\contesto
+Il tempo end-to-end è la metrica comune a tutte le versioni: va dall'arrivo dell'ordine all'API al suo salvataggio nel database. Client e cluster hanno orologi diversi, quindi i due istanti devono venire entrambi dal cluster. Attenzione: in PostgreSQL \texttt{now()} restituisce l'istante di \emph{inizio} della transazione, non quello corrente. Usarlo falserebbe la misura proprio quando la transazione aspetta (lock, riprove, replica).
+
+\scelta
+\begin{itemize}
+  \item L'API registra l'istante di ricezione appena arriva la richiesta; in V3 e V5 lo inserisce nel messaggio.
+  \item La riga dell'ordine salva \texttt{ts\_ricezione} e \texttt{ts\_scrittura}, calcolato con \texttt{clock\_timestamp()} nell'istruzione di inserimento.
+  \item Tempo end-to-end $= \texttt{ts\_scrittura} - \texttt{ts\_ricezione}$.
+\end{itemize}
+
+\conseguenze
+La misura esclude l'attesa del commit (scrittura su disco e, in V4s, conferma dello standby): quell'attesa compare nella latenza vista dal client delle versioni sincrone, che si misura a parte. Il valore sta nella riga, quindi sopravvive a crash e failover. In locale i due orologi coincidono (stessa macchina virtuale); su EKS i nodi sono sincronizzati con NTP e lo scarto massimo va misurato e dichiarato.
+
+\end{decisione}

@@ -7,7 +7,15 @@ Questo documento descrive l'architettura del sistema \progetto{}, le decisioni c
 
 \section{Ambito del progetto}
 
-\progetto{} è un servizio di ordini volutamente semplice, implementato in tre versioni architetturali (capitolo~\ref{cap:architettura}). Il servizio non è l'oggetto della valutazione: è il veicolo con cui si misura, attraverso guasti iniettati di proposito, come le scelte architetturali influenzano disponibilità, prestazioni e ripristino.
+\progetto{} è un servizio di ordini volutamente semplice, realizzato in cinque versioni architetturali (capitolo~\ref{cap:architettura}). Il servizio non è l'oggetto della valutazione: è il veicolo con cui si misura, iniettando guasti controllati, come le scelte architetturali influenzano disponibilità, latenza, durabilità dei dati e ripristino.
+
+Il metodo segue tre principi.
+
+\begin{description}
+  \item[Un fattore alla volta.] Ogni versione cambia una sola caratteristica rispetto a quella da cui deriva, così ogni differenza misurata ha una causa attribuibile.
+  \item[Previsioni prima delle misure.] Le previsioni quantitative (capitolo~\ref{cap:previsioni}) sono scritte e committate prima della campagna: il confronto con i dati verifica la comprensione del sistema invece di adattarla a posteriori.
+  \item[Limiti dichiarati.] Le minacce alla validità (capitolo~\ref{cap:validita}) sono parte del risultato, non una nota a margine.
+\end{description}
 
 Il nome richiama il \textit{kintsugi}, l'arte giapponese di riparare la ceramica rotta con l'oro, mettendo in evidenza le crepe invece di nasconderle: ogni guasto misurato mostra dove l'architettura cede e come si ricompone.
 
@@ -21,20 +29,24 @@ Il nome richiama il \textit{kintsugi}, l'arte giapponese di riparare la ceramica
 \section{Struttura del documento}
 
 \begin{description}[leftmargin=2.6cm, style=nextline]
-  \item[Capitolo~\ref{cap:obiettivi}] Obiettivo e domande di ricerca.
-  \item[Capitolo~\ref{cap:architettura}] Vista dei componenti: le tre versioni del sistema.
+  \item[Capitolo~\ref{cap:obiettivi}] Obiettivo, domande di ricerca e ipotesi.
+  \item[Capitolo~\ref{cap:architettura}] Vista dei componenti: le cinque versioni del sistema.
   \item[Capitolo~\ref{cap:deployment}] Vista di deployment: ambiente locale e ambiente AWS.
-  \item[Capitolo~\ref{cap:guasti}] Modello dei guasti.
-  \item[Capitolo~\ref{cap:decisioni}] Decisioni architetturali, in formato ADR.
-  \item[Capitolo~\ref{cap:misura}] Protocollo di misura: definizioni e piano sperimentale.
+  \item[Capitolo~\ref{cap:guasti}] Modello dei guasti e metodo di iniezione.
+  \item[Capitolo~\ref{cap:decisioni}] Decisioni architetturali (ADR) e tabella dei parametri.
+  \item[Capitolo~\ref{cap:misura}] Protocollo di misura: indicatori, obiettivi, matrice degli esperimenti.
   \item[Capitolo~\ref{cap:previsioni}] Previsioni quantitative, scritte prima delle misure.
-  \item[Appendice~\ref{app:pianificazione}] Fasi e milestone del progetto.
+  \item[Capitolo~\ref{cap:validita}] Minacce alla validità e loro mitigazione.
+  \item[Appendice~\ref{app:pianificazione}] Fasi, milestone e stima dello sforzo.
+  \item[Appendice~\ref{app:revisione}] Revisione critica del piano: problemi trovati e correzioni.
 \end{description}
 
 \section{Riferimenti}
 
 \begin{itemize}
-  \item Materiale dell'insegnamento \insegnamento{} (slide su architetture software, metriche, project management, test di carico).
-  \item Piano di progetto del gruppo (\texttt{08\_PROGETTO\_DEFINITIVO.md}).
-  \item Repository: \url{https://github.com/terrecruis/kintsugi}.
+  \item Materiale dell'insegnamento \insegnamento{} (architetture software, metriche, project management, elasticità, test di carico).
+  \item B.~Beyer, C.~Jones, J.~Petoff, N.~R.~Murphy, \textit{Site Reliability Engineering}, O'Reilly, 2016 (indicatori, obiettivi e budget di errore).
+  \item C.~Wohlin et al., \textit{Experimentation in Software Engineering}, Springer, 2012 (minacce alla validità).
+  \item Documentazione ufficiale di Kubernetes, CloudNativePG, KEDA, RabbitMQ e Apache JMeter.
+  \item Repository del progetto: \url{https://github.com/terrecruis/kintsugi}.
 \end{itemize}

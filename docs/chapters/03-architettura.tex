@@ -1,31 +1,70 @@
 \chapter{Architettura}
 \label{cap:architettura}
 
-Il servizio esiste in tre versioni. Sono \textbf{configurazioni dello stesso codice} e non applicazioni diverse: girano sullo stesso commit, così il confronto tra loro è equo (decisione D0012).
+Il servizio esiste in cinque versioni, tutte configurazioni dello stesso codice (D0012). Le versioni formano un albero di derivazione (figura~\ref{fig:derivazione}): ognuna cambia una sola caratteristica rispetto a quella da cui deriva, così ogni confronto isola un solo fattore.
 
-\section{Componenti}
-
-\begin{table}[h]
+\begin{figure}[htbp]
 \centering
-\caption{Componenti del sistema.}
-\label{tab:componenti}
-\begin{tabularx}{\linewidth}{@{}llL@{}}
+\begin{tikzpicture}
+\node[box] (v1) {V1\\{\scriptsize sincrona, 1 istanza}};
+\node[box, right=1.3cm of v1] (v2) {V2\\{\scriptsize N repliche}};
+\node[box, above right=0.2cm and 1.6cm of v2] (v3) {V3\\{\scriptsize asincrona}};
+\node[box, below right=0.2cm and 1.6cm of v2] (v4) {V4\\{\scriptsize DB replicato}};
+\node[box, right=1.3cm of v3] (v5) {V5\\{\scriptsize autoscaling}};
+\draw[freccia] (v1) -- node[above, font=\scriptsize] {+ repliche} (v2);
+\draw[freccia] (v2) -- node[above, sloped, font=\scriptsize] {+ coda} (v3);
+\draw[freccia] (v2) -- node[below, sloped, font=\scriptsize] {+ replica DB} (v4);
+\draw[freccia] (v3) -- node[above, font=\scriptsize] {+ KEDA} (v5);
+\end{tikzpicture}
+\caption{Albero di derivazione delle versioni: ogni arco aggiunge un solo fattore.}
+\label{fig:derivazione}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{Versioni del sistema.}
+\label{tab:versioni}
+\begin{tabularx}{\linewidth}{@{}llLl@{}}
 \toprule
-\textbf{Componente} & \textbf{Con stato} & \textbf{Responsabilità} \\
+\textbf{Versione} & \textbf{Deriva da} & \textbf{Cosa cambia} & \textbf{Domande} \\
 \midrule
-API        & no & Riceve l'ordine; in V1/V2 lo scrive nel database, in V3 lo pubblica in coda \\
-Worker     & no & (solo V3) Legge gli ordini dalla coda e li scrive nel database \\
-RabbitMQ   & sì & (solo V3) Coda degli ordini e coda dei messaggi falliti \\
-PostgreSQL & sì & Archivio degli ordini, con timestamp di ricezione e di commit \\
+V1 & --  & Riferimento: sincrona, una istanza dell'API & RQ1, RQ3 \\
+V2 & V1  & N repliche dell'API dietro un bilanciatore & RQ1--RQ4, RQ6 \\
+V3 & V2  & Comunicazione asincrona tramite coda e worker & RQ2, RQ5, RQ6 \\
+V4 & V2  & Database replicato con failover automatico (V4a: replica asincrona, V4s: sincrona) & RQ4 \\
+V5 & V3  & Numero di worker scalato sulla lunghezza della coda & RQ5 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
+\section{Componenti}
+
+\begin{table}[htbp]
+\centering
+\caption{Componenti del sistema.}
+\label{tab:componenti}
+\begin{tabularx}{\linewidth}{@{}lllL@{}}
+\toprule
+\textbf{Componente} & \textbf{Stato} & \textbf{Piano} & \textbf{Responsabilità} \\
+\midrule
+API        & no & dati      & Riceve l'ordine; in V1, V2, V4 lo scrive nel database, in V3 e V5 lo pubblica in coda \\
+Worker     & no & dati      & (V3, V5) Legge gli ordini dalla coda e li scrive nel database \\
+RabbitMQ   & sì & dati      & (V3, V5) Coda degli ordini e coda dei messaggi falliti \\
+PostgreSQL & sì & dati      & Archivio degli ordini; in V4 primario più standby \\
+Toxiproxy  & no & dati      & Proxy verso il database, usato per iniettare latenza (F5); sempre presente in V2 e V3 \\
+CloudNativePG & no & controllo & (V4) Rileva il guasto del primario e promuove lo standby \\
+KEDA       & no & controllo & (V5) Legge la lunghezza della coda e regola il numero di worker \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Il \textbf{piano dei dati} serve le richieste; il \textbf{piano di controllo} (Kubernetes, CloudNativePG, KEDA) le ripara e le adatta. Un guasto del piano di controllo non interrompe il servizio, ma impedisce il ripristino: per questo i due piani sono trattati separatamente nella sezione~\ref{sec:spof}.
+
 \section{V1 -- sincrona, una istanza}
 
-L'API riceve l'ordine, lo elabora, lo scrive nel database e risponde (figura~\ref{fig:v1}).
+L'API riceve l'ordine, lo scrive nel database e risponde (figura~\ref{fig:v1}).
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \node[box] (client) {Client\\(JMeter)};
@@ -40,9 +79,9 @@ L'API riceve l'ordine, lo elabora, lo scrive nel database e risponde (figura~\re
 
 \section{V2 -- sincrona, N repliche}
 
-Come V1, con più copie dell'API dietro un bilanciatore (figura~\ref{fig:v2}).
+Come V1, con N copie dell'API dietro un bilanciatore (figura~\ref{fig:v2}).
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
 \node[box] (client) {Client};
@@ -61,7 +100,7 @@ Come V1, con più copie dell'API dietro un bilanciatore (figura~\ref{fig:v2}).
 
 L'API pubblica l'ordine in coda, attende la conferma del broker e risponde ``accettato''. I worker leggono dalla coda, scrivono nel database e solo dopo confermano il messaggio. I messaggi che non si riesce a elaborare finiscono nella coda dei falliti (figura~\ref{fig:v3}).
 
-\begin{figure}[h]
+\begin{figure}[htbp]
 \centering
 \resizebox{\linewidth}{!}{%
 \begin{tikzpicture}
@@ -83,6 +122,87 @@ L'API pubblica l'ordine in coda, attende la conferma del broker e risponde ``acc
 \label{fig:v3}
 \end{figure}
 
-\section{Punti unici di guasto}
+\section{V4 -- database replicato con failover}
 
-Il database è un punto unico di guasto in tutte e tre le versioni; il broker lo è in V3. Entrambi sono singoli, con volume persistente, e sono dichiarati come tali. I guadagni di V2 sono quindi limitati dal database, e le previsioni (capitolo~\ref{cap:previsioni}) ne tengono conto.
+Come V2, ma PostgreSQL è un cluster di due istanze gestito dall'operatore CloudNativePG: un \textbf{primario}, che accetta le scritture, e uno \textbf{standby}, che riceve in streaming il log delle transazioni (WAL). L'API si collega al servizio \texttt{-rw}, che punta sempre al primario corrente; se il primario cade, l'operatore promuove lo standby e aggiorna il servizio (figura~\ref{fig:v4}).
+
+V4 si misura in due modalità, che rappresentano un compromesso classico tra durabilità, disponibilità e latenza:
+\begin{description}
+  \item[V4a -- replica asincrona] il commit non aspetta lo standby: latenza minima, ma gli ultimi commit possono andare persi nel failover.
+  \item[V4s -- replica sincrona] il commit aspetta la conferma dello standby: nessuna perdita, latenza più alta, e le scritture si fermano se lo standby non risponde.
+\end{description}
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}
+\node[box] (client) {Client};
+\node[box, right=1cm of client] (lb) {Service /\\Ingress};
+\node[box, right=1cm of lb] (api) {API\\$\times N$};
+\node[box, right=1cm of api] (rw) {Service\\\texttt{-rw}};
+\node[box, right=1cm of rw] (prim) {PostgreSQL\\primario};
+\node[box, below=1.1cm of prim] (stby) {PostgreSQL\\standby};
+\node[box, right=1.4cm of prim, dashed] (op) {Operatore\\CloudNativePG};
+\draw[freccia] (client) -- (lb);
+\draw[freccia] (lb) -- (api);
+\draw[freccia] (api) -- (rw);
+\draw[freccia] (rw) -- (prim);
+\draw[freccia] (prim) -- node[left, font=\scriptsize] {replica WAL} (stby);
+\draw[freccia, dashed] (op) -- (prim);
+\draw[freccia, dashed] (op) -- (stby);
+\end{tikzpicture}}
+\caption{V4: database primario e standby con failover gestito dall'operatore.}
+\label{fig:v4}
+\end{figure}
+
+\section{V5 -- asincrona elastica}
+
+Come V3, ma il numero di worker non è fisso: KEDA legge la lunghezza della coda e, tramite l'Horizontal Pod Autoscaler, porta i worker tra un minimo e un massimo (figura~\ref{fig:v5}). La reazione non è istantanea: si sommano l'intervallo di lettura della coda, la decisione dell'autoscaler e l'avvio dei pod. Il confronto con V3 si fa a parità di risorse consumate (D0015), altrimenti vincerebbe in modo banale la versione con più worker.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}
+\node[box] (client) {Client};
+\node[box, right=1cm of client] (lb) {Service /\\Ingress};
+\node[box, right=1cm of lb] (api) {API\\$\times N$};
+\node[box, right=1.6cm of api] (mq) {RabbitMQ};
+\node[box, right=1.4cm of mq] (worker) {Worker\\$1 \dots M$};
+\node[box, right=1cm of worker] (db) {PostgreSQL};
+\node[box, above=0.8cm of mq, minimum width=2cm] (dlq) {Dead-letter};
+\coordinate (mid) at ($(mq)!0.5!(worker)$);
+\node[box, below=1cm of mid, dashed] (keda) {KEDA};
+\draw[freccia] (client) -- (lb);
+\draw[freccia] (lb) -- (api);
+\draw[freccia] (api) -- node[above, font=\scriptsize] {publish} (mq);
+\draw[freccia] (mq) -- (worker);
+\draw[freccia] (worker) -- (db);
+\draw[freccia, dashed] (mq) -- (dlq);
+\draw[freccia, dashed] (mq) -- node[left, font=\scriptsize] {lunghezza coda} (keda);
+\draw[freccia, dashed] (keda) -- node[right, font=\scriptsize] {scala} (worker);
+\end{tikzpicture}}
+\caption{V5: worker scalati da KEDA sulla lunghezza della coda.}
+\label{fig:v5}
+\end{figure}
+
+\section{Punti unici di guasto}
+\label{sec:spof}
+
+\begin{table}[htbp]
+\centering
+\caption{Punti unici di guasto per versione.}
+\label{tab:spof}
+\begin{tabularx}{\linewidth}{@{}lLL@{}}
+\toprule
+\textbf{Versione} & \textbf{Piano dei dati} & \textbf{Piano di controllo} \\
+\midrule
+V1 & Punto di ingresso, API, PostgreSQL & Control plane di Kubernetes (un nodo) \\
+V2 & Punto di ingresso, PostgreSQL & Control plane \\
+V3 & Punto di ingresso, RabbitMQ (accettazione), PostgreSQL (completamento) & Control plane \\
+V4 & Punto di ingresso & Control plane, operatore (senza operatore niente failover) \\
+V5 & Come V3 & Control plane, KEDA (senza KEDA i worker restano al numero corrente) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Il punto di ingresso è un limite dell'ambiente locale: è la porta di un nodo esposta all'host, che nessun esperimento guasta. Su AWS è l'ALB, distribuito su più zone.

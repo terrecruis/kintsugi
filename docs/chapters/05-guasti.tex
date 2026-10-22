@@ -1,24 +1,50 @@
 \chapter{Modello dei guasti}
 \label{cap:guasti}
 
-I guasti sono iniettati sotto carico costante, uno per run, in un istante registrato. Nessun ripristino è manuale: si osserva quello automatico.
+\section{Classi di guasto}
 
-\begin{table}[h]
+\begin{description}
+  \item[Crash] Il processo termina. Kubernetes se ne accorge subito, perché il processo è uscito, e riavvia il container. È il guasto più facile da rilevare.
+  \item[Blocco] Il processo è vivo ma non risponde (\textit{hang}). Nessun segnale esplicito: lo rilevano solo le sonde, dopo periodo $\times$ soglia. È il guasto in cui i parametri delle sonde contano davvero, ed è il più insidioso nei sistemi reali.
+  \item[Degrado] Il componente risponde, ma lentamente. Nessuno lo ripara: conta come il resto del sistema lo tollera (timeout, deadline, riprove).
+  \item[Perdita di un nodo] Sparisce un'intera macchina con i suoi pod. Kubernetes reagisce solo dopo un periodo di tolleranza e un'attesa prima di espellere i pod.
+\end{description}
+
+\section{Guasti iniettati}
+
+\begin{table}[htbp]
 \centering
-\caption{Guasti iniettati.}
+\caption{Guasti iniettati, uno per run, sotto carico W1.}
 \label{tab:guasti}
-\begin{tabularx}{\linewidth}{@{}llLl@{}}
+\small
+\begin{tabularx}{\linewidth}{@{}llllLl@{}}
 \toprule
-\textbf{ID} & \textbf{Guasto} & \textbf{Chi ripristina} & \textbf{Versioni} \\
+\textbf{ID} & \textbf{Guasto} & \textbf{Classe} & \textbf{Rilevamento} & \textbf{Ripristino} & \textbf{Versioni} \\
 \midrule
-F1 & Spegnere 1 pod dell'API & Kubernetes riavvia il pod e lo esclude dal traffico finché non è pronto & V1, V2, V3 \\
-F2 & Spegnere tutti i worker & Kubernetes ricrea i pod; i messaggi attendono in coda & V3 \\
-F3 & Fermare il broker & Kubernetes riavvia il pod; i messaggi restano grazie a code durevoli e volume & V3 \\
-F4 & Fermare il database & Kubernetes riavvia il pod; dati salvi sul volume, l'applicazione ritenta & V1, V2, V3 \\
-F5 & Ritardo di rete verso il DB & Nessuno: è un degrado, si osservano timeout e riprove & V2, V3 \\
-F6 & \textit{(opz.)} Perdita di un nodo & Kubernetes sposta API e worker dopo un'attesa & V2, V3 \\
+F1 & Crash di un'istanza API & crash & immediato & Kubelet riavvia il container; l'istanza è esclusa dal traffico finché non è pronta & V1--V3 \\
+F2 & Crash di tutti i worker & crash & immediato & Kubelet; gli ordini attendono in coda & V3 \\
+F3 & Crash del broker & crash & immediato & Kubelet; code durevoli e volume conservano i messaggi; API e worker si riconnettono & V3 \\
+F4 & Crash del database & crash & immediato & V1--V3: kubelet e recupero dal WAL. V4: l'operatore promuove lo standby & V1--V4 \\
+F5 & Latenza verso il DB & degrado & -- & Nessuno: si osservano timeout e riprove & V2, V3 \\
+F6 & Perdita di worker-2 & nodo & dopo tolleranza & Pod ricreati altrove dopo l'attesa di espulsione & V2, V3 (opz.) \\
+F7 & Blocco di un'istanza API & blocco & sonde & Readiness la esclude, liveness la riavvia & V2 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\todo{per ogni guasto: comando di iniezione, condizione di ripristino, MTTR atteso (capitolo~\ref{cap:previsioni})}
+F7 si esegue con due configurazioni delle sonde, rapida e predefinita di Kubernetes (sezione~\ref{sec:parametri}): è l'esperimento che misura quanto il rilevamento dipende dai parametri (RQ3, H3).
+
+\section{Metodo di iniezione}
+\label{sec:iniezione}
+
+Il metodo è fissato dalla decisione D0016.
+
+\begin{itemize}
+  \item \textbf{Crash} = \texttt{SIGKILL}; \textbf{blocco} = \texttt{SIGSTOP}. Non si usa \texttt{kubectl delete pod}: è una terminazione ordinata (SIGTERM, periodo di grazia, poi un pod nuovo), cioè un evento pianificato, non un guasto.
+  \item I segnali si inviano \textbf{dal nodo} kind che ospita il pod (\texttt{docker exec <nodo> kill -KILL <pid>}), non dall'interno del container. Il processo principale di un container è il PID~1 del suo namespace, e il kernel ignora \texttt{SIGKILL} e \texttt{SIGSTOP} inviati a PID~1 dallo stesso namespace; dal namespace del nodo, che ne è antenato, vengono consegnati.
+  \item Lo stesso comando che invia il segnale legge l'orologio del nodo: l'istante del guasto è registrato sia sull'orologio dell'host (per le metriche lato client) sia su quello del cluster (per le metriche lato server).
+  \item La latenza (F5) si inietta con Toxiproxy, che è nel percorso verso il database in \emph{tutti} i run di V2 e V3, con latenza zero quando inattivo: così il proxy stesso non introduce una differenza tra run con e senza guasto.
+  \item La perdita di un nodo (F6) si ottiene fermando il container del nodo kind \texttt{worker-2}.
+\end{itemize}
+
+Su EKS i segnali si inviano da un pod privilegiato sul nodo, che condivide il namespace dei processi dell'host: il meccanismo cambia, il guasto resta lo stesso.

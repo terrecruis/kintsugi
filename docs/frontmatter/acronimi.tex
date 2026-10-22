@@ -2,22 +2,35 @@
 \addcontentsline{toc}{chapter}{Acronimi e termini}
 \markboth{Acronimi e termini}{}
 
-\begin{tabularx}{\linewidth}{@{}lL@{}}
+\begin{longtable}{@{}lp{11.5cm}@{}}
 \toprule
 \textbf{Termine} & \textbf{Significato} \\
 \midrule
+\endhead
+\bottomrule
+\endfoot
 ADR      & \textit{Architecture Decision Record}: scheda che documenta una decisione architetturale \\
 ALB      & \textit{Application Load Balancer} di AWS \\
 API      & Servizio che riceve gli ordini dal client \\
+Blocco   & Guasto in cui il processo resta vivo ma non risponde (\textit{hang}) \\
+Budget di errore & Indisponibilità ammessa da uno SLO in un periodo (con 99,9\% su 30 giorni: 43,2 minuti) \\
+CNPG     & CloudNativePG: operatore Kubernetes che gestisce cluster PostgreSQL con failover \\
+Crash    & Guasto in cui il processo termina \\
 DLQ      & \textit{Dead-letter queue}: coda dei messaggi che non è stato possibile elaborare \\
 EKS      & \textit{Elastic Kubernetes Service}: Kubernetes gestito da AWS \\
+Failover & Promozione automatica dello standby a primario quando il primario cade \\
+HPA      & \textit{Horizontal Pod Autoscaler}: componente di Kubernetes che varia il numero di pod \\
+KEDA     & \textit{Kubernetes Event-Driven Autoscaling}: autoscaling basato su eventi, come la lunghezza di una coda \\
 kind     & \textit{Kubernetes in Docker}: cluster Kubernetes locale fatto di container \\
 MTBF     & \textit{Mean Time Between Failures}: tempo medio tra due guasti \\
 MTTR     & \textit{Mean Time To Repair}: tempo medio di ripristino \\
 Pod      & Unità minima di esecuzione in Kubernetes \\
+RPO      & \textit{Recovery Point Objective}: quantità di dati che si accetta di perdere in un guasto \\
 RQ       & \textit{Research Question}: domanda di ricerca \\
 Run      & Singola esecuzione di un esperimento \\
+SLI      & \textit{Service Level Indicator}: misura del livello di servizio \\
+SLO      & \textit{Service Level Objective}: obiettivo fissato su uno SLI \\
 SPOF     & \textit{Single Point Of Failure}: punto unico di guasto \\
-Worker   & Processo che legge gli ordini dalla coda e li scrive nel database (solo V3) \\
-\bottomrule
-\end{tabularx}
+WAL      & \textit{Write-Ahead Log}: log delle transazioni di PostgreSQL, usato per recupero e replica \\
+Worker   & Processo che legge gli ordini dalla coda e li scrive nel database (V3, V5) \\
+\end{longtable}

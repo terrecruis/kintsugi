@@ -1,0 +1,14 @@
+\begin{decisione}{D0015}{V5: autoscaling dei worker sulla coda}{Proposta}{22/10/2026}
+
+\contesto
+Il corso tratta l'elasticità e l'auto scaling come risposta ai picchi di carico. In V3 i worker sono in numero fisso: o sono pochi e il picco crea arretrato, o sono tanti e restano inattivi per la maggior parte del tempo.
+
+\scelta
+V5 è V3 con KEDA, che scala i worker tra 1 e 10 in base agli ordini in coda (50 per worker), leggendo la coda ogni 5 s. Il confronto con V3 avviene sotto W2 (picco) e W3 (sovraccarico). Oltre al tempo di smaltimento si riporta il costo in \textbf{worker-secondi}. V3 si misura anche con 10 worker fissi sotto W2: così V5 si colloca tra i due estremi di V3, sia per prestazioni sia per costo.
+
+Alternativa scartata: autoscaling sulla CPU. I worker passano il tempo ad aspettare il database, quindi la CPU non misura il lavoro arretrato.
+
+\conseguenze
+La reazione al picco ha un ritardo (lettura della coda, autoscaler, avvio dei pod) che si prevede e si misura. Il reset deve riportare i worker al minimo prima di ogni run. In locale più worker producono più capacità solo perché il tempo di servizio è simulato come attesa e non come calcolo: è una minaccia alla validità esterna, dichiarata. La campagna cresce di 30 run.
+
+\end{decisione}

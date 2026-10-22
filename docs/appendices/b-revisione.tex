@@ -1,0 +1,33 @@
+\chapter{Revisione critica del piano}
+\label{app:revisione}
+
+La versione 0.3 del documento nasce da una revisione completa del piano iniziale. Questa appendice elenca i problemi trovati, perché contano e dove sono stati corretti. Le ultime due righe sono vincoli per decisioni ancora da scrivere.
+
+{\small
+\begin{longtable}{@{}p{0.4cm}p{6.1cm}p{5.9cm}p{1.6cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Problema} & \textbf{Correzione} & \textbf{Dove} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & \texttt{kubectl delete pod} è una terminazione ordinata seguita da un pod nuovo, non un guasto. & Crash con \texttt{SIGKILL}. & D0016 \\
+2 & Un segnale a PID~1 dall'interno del container viene ignorato dal kernel: \texttt{kubectl exec ... kill -9 1} non fa nulla. & Segnali inviati dal namespace del nodo. & D0016 \\
+3 & Con soli crash il rilevamento è immediato: i parametri delle sonde non contano e RQ3 resta senza risposta. & Nuovo guasto F7 (blocco) con due configurazioni delle sonde. & cap.~\ref{cap:guasti} \\
+4 & Il backoff dei riavvii si accumula tra run consecutivi e falsa i tempi di ripristino. & Il reset ricrea i pod. & cap.~\ref{cap:misura} \\
+5 & \texttt{now()} restituisce l'inizio della transazione, non l'istante di scrittura. & \texttt{clock\_timestamp()} nell'inserimento. & D0005 \\
+6 & Una liveness che controlla il database trasforma un crash del database in riavvii a cascata dell'API. & Liveness e readiness senza dipendenze; fail fast nell'applicazione. & D0007 \\
+7 & Senza deadline lato server l'API lavora per richieste già abbandonate dal client. & Deadline di 1,5 s sotto il timeout di 2 s; \texttt{statement\_timeout}. & D0008 \\
+8 & Con un solo nodo worker kind non si possono separare primario e standby né simulare F6. & Cluster a tre nodi: control plane e due worker. & cap.~\ref{cap:deployment} \\
+9 & La disponibilità proiettata moltiplicava quelle dei componenti, ma il downtime è misurato sul sistema intero. & Modello SRE: $U = \sum_i \lambda_i D_i$, SLO e budget di errore. & D0017 \\
+10 & Con N repliche i crash di istanza sono N volte più frequenti: la proiezione li sottostimava. & Frequenza per istanza nella proiezione. & cap.~\ref{cap:previsioni} \\
+11 & Il generatore a thread (modello chiuso) rallenta insieme al sistema. & Open Model Thread Group di JMeter. & cap.~\ref{cap:misura} \\
+12 & I parametri dell'ALB non si possono allineare a quelli locali (intervallo minimo 5 s). & RQ6 riformulata come attribuzione delle differenze. & cap.~\ref{cap:deployment} \\
+13 & In locale le repliche condividono l'hardware: si misura ridondanza di processo, non di macchina. & Minaccia dichiarata; confronto con EKS. & cap.~\ref{cap:validita} \\
+14 & Toxiproxy presente solo nei run con F5 introdurrebbe una differenza estranea al guasto. & Proxy sempre nel percorso, a latenza zero quando inattivo. & D0016 \\
+15 & Confrontare V5 con V3 senza considerare le risorse consumate premia chi usa più worker. & Costo in worker-secondi e V3 con 10 worker come estremo. & D0015 \\
+16 & Il control plane di Kubernetes è un punto unico di guasto per il ripristino (non per il servizio), e non era dichiarato. & Piano dei dati e di controllo separati nell'analisi. & cap.~\ref{cap:architettura} \\
+17 & Duplicati contati in metriche in memoria, che si azzerano al riavvio del pod. & Duplicati registrati in una tabella del database. & D0004 \\
+18 & Una riprova con \texttt{nack} e rimessa in coda crea un ciclo continuo; un messaggio non confermato troppo a lungo supera il \texttt{consumer\_timeout} di RabbitMQ (30 minuti di default). & Riprova nel worker tenendo il messaggio non confermato, con attesa crescente; durata massima molto sotto il \texttt{consumer\_timeout}. & D0003 \\
+\end{longtable}
+}
