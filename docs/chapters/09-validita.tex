@@ -1,60 +1,22 @@
-\chapter{Minacce alla validità}
+\chapter{I limiti degli esperimenti}
 \label{cap:validita}
 
-Le minacce sono classificate secondo Wohlin et al.: per ognuna si indica la mitigazione adottata. Quelle non eliminabili sono dichiarate e pesano sull'interpretazione dei risultati.
+Nessun esperimento è perfetto. Questi sono i limiti che conosciamo e come li riduciamo.
 
-\section{Validità interna}
-\textit{La differenza misurata è causata dal fattore dichiarato?}
-
+\begin{table}[htbp]
+\centering
+\caption{Limiti e contromisure.}
+\label{tab:limiti}
 \begin{tabularx}{\linewidth}{@{}LL@{}}
 \toprule
-\textbf{Minaccia} & \textbf{Mitigazione} \\
+\textbf{Limite} & \textbf{Cosa facciamo} \\
 \midrule
-Interferenza dell'host: generatore di carico, cluster e sistema operativo condividono CPU e memoria & Soglia di CPU, nessuno swap ammesso, carichi sotto la capacità misurata, run non validi scartati \\
-Stato trascinato tra run (backoff dei riavvii, tabella che cresce, worker scalati, topologia di V4 dopo un failover) & Reset che ricrea i pod e verifica lo stato iniziale prima di partire \\
-Degrado progressivo dell'ambiente durante la campagna & Ordine dei run casuale \\
-Istante del guasto impreciso & Registrato nello stesso comando che invia il segnale, su entrambi gli orologi \\
-Proxy di iniezione che altera la latenza solo in alcuni run & Toxiproxy sempre nel percorso verso il database in V2 e V3 \\
+Sullo stesso computer girano sia il sistema sia il generatore di ordini, che si rubano risorse & Scartiamo gli esperimenti con il computer sovraccarico \\
+Un esperimento può lasciare ``tracce'' che influenzano il successivo & Riportiamo tutto allo stato iniziale prima di ogni esperimento \\
+In locale le tre macchine sono finte: condividono lo stesso hardware & Ripetiamo una parte degli esperimenti su AWS, con macchine vere \\
+Il servizio è molto più semplice di uno reale & Le conclusioni riguardano i meccanismi (accorgersi, riparare, smaltire), non i numeri esatti \\
+Un risultato singolo può essere un caso & Ripetiamo 10 volte le prove importanti \\
+Si rischia di ``aggiustare'' le spiegazioni dopo aver visto i dati & Scriviamo le previsioni prima \\
 \bottomrule
 \end{tabularx}
-
-\section{Validità di costrutto}
-\textit{Misuriamo davvero ciò che intendiamo misurare?}
-
-\begin{tabularx}{\linewidth}{@{}LL@{}}
-\toprule
-\textbf{Minaccia} & \textbf{Mitigazione} \\
-\midrule
-La soglia del 99\% per secondo dipende dal ritmo: a 50 richieste/s basta un errore per perdere il secondo & Si riportano sempre anche le richieste fallite per guasto \\
-La finestra di 5 s di ``ripristinato'' è arbitraria & Analisi di sensibilità con 3 s e 10 s \\
-Il tempo end-to-end esclude l'attesa del commit & Attesa visibile nella latenza lato client; scelta dichiarata in D0005 \\
-\texttt{kubectl delete pod} non rappresenta un guasto & Crash e blocco con segnali dal nodo (D0016) \\
-\bottomrule
-\end{tabularx}
-
-\section{Validità esterna}
-\textit{Quanto si generalizzano i risultati?}
-
-\begin{tabularx}{\linewidth}{@{}LL@{}}
-\toprule
-\textbf{Minaccia} & \textbf{Mitigazione} \\
-\midrule
-In locale le repliche girano sulla stessa macchina fisica: ridondanza di processo, non di hardware & Dichiarato; la fase AWS usa nodi separati (RQ6) \\
-Il tempo di servizio è simulato come attesa, non come calcolo: più worker producono più capacità anche su un solo host & Dichiarato in D0015; i risultati di V5 valgono per carichi limitati dall'I/O \\
-Servizio giocattolo, un solo tipo di richiesta & Le conclusioni riguardano i meccanismi (rilevamento, failover, smaltimento), non i valori assoluti \\
-kind non è un cluster di produzione & Confronto con EKS (RQ6) \\
-\bottomrule
-\end{tabularx}
-
-\section{Validità delle conclusioni}
-\textit{Le conclusioni reggono statisticamente?}
-
-\begin{tabularx}{\linewidth}{@{}LL@{}}
-\toprule
-\textbf{Minaccia} & \textbf{Mitigazione} \\
-\midrule
-Poche ripetizioni & 10 ripetizioni per le configurazioni decisive, intervalli bootstrap, differenza minima rilevabile dichiarata \\
-Interpretazione adattata ai dati & Previsioni committate prima della campagna \\
-Molti confronti, qualche ``differenza'' per caso & Si confrontano solo le coppie previste dalle domande di ricerca \\
-\bottomrule
-\end{tabularx}
+\end{table}

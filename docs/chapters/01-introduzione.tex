@@ -1,52 +1,27 @@
 \chapter{Introduzione}
 \label{cap:introduzione}
 
-\section{Scopo del documento}
+\section{Di cosa parla questo documento}
 
-Questo documento descrive l'architettura del sistema \progetto{}, le decisioni che l'hanno determinata e il protocollo con cui viene misurata. È il riferimento comune per lo sviluppo, per gli esperimenti e per la discussione all'esame.
+\progetto{} è un piccolo servizio che riceve ordini e li salva in un database. Lo costruiamo in cinque modi diversi (cinque \emph{architetture}), poi lo rompiamo di proposito e misuriamo come ognuna reagisce: quanto resta ferma, quanti ordini perde, quanto ci mette a ripartire.
 
-\section{Ambito del progetto}
+Il servizio in sé è volutamente semplice: quello che conta non è il codice, ma le \textbf{scelte di progetto} e il loro effetto quando qualcosa va storto.
 
-\progetto{} è un servizio di ordini volutamente semplice, realizzato in cinque versioni architetturali (capitolo~\ref{cap:architettura}). Il servizio non è l'oggetto della valutazione: è il veicolo con cui si misura, iniettando guasti controllati, come le scelte architetturali influenzano disponibilità, latenza, durabilità dei dati e ripristino.
+Il nome viene dal \textit{kintsugi}, l'arte giapponese di riparare la ceramica rotta con l'oro, mettendo in evidenza le crepe invece di nasconderle.
 
-Il metodo segue tre principi.
+\section{Il metodo in tre regole}
 
-\begin{description}
-  \item[Un fattore alla volta.] Ogni versione cambia una sola caratteristica rispetto a quella da cui deriva, così ogni differenza misurata ha una causa attribuibile.
-  \item[Previsioni prima delle misure.] Le previsioni quantitative (capitolo~\ref{cap:previsioni}) sono scritte e committate prima della campagna: il confronto con i dati verifica la comprensione del sistema invece di adattarla a posteriori.
-  \item[Limiti dichiarati.] Le minacce alla validità (capitolo~\ref{cap:validita}) sono parte del risultato, non una nota a margine.
-\end{description}
+\begin{enumerate}
+  \item \textbf{Una cosa alla volta.} Ogni architettura cambia un solo aspetto rispetto alla precedente, così sappiamo sempre a cosa attribuire una differenza.
+  \item \textbf{Prima prevedere, poi misurare.} Scriviamo cosa ci aspettiamo \emph{prima} degli esperimenti. Il confronto mostra se abbiamo capito davvero il sistema.
+  \item \textbf{Dichiarare i limiti.} Diciamo apertamente cosa i nostri esperimenti non possono dimostrare.
+\end{enumerate}
 
-Il nome richiama il \textit{kintsugi}, l'arte giapponese di riparare la ceramica rotta con l'oro, mettendo in evidenza le crepe invece di nasconderle: ogni guasto misurato mostra dove l'architettura cede e come si ricompone.
-
-\section{Destinatari}
+\section{Come è organizzato}
 
 \begin{itemize}
-  \item I membri del gruppo, come riferimento durante sviluppo ed esperimenti.
-  \item I docenti dell'insegnamento, come documentazione dell'architettura e del metodo.
-\end{itemize}
-
-\section{Struttura del documento}
-
-\begin{description}[leftmargin=2.6cm, style=nextline]
-  \item[Capitolo~\ref{cap:obiettivi}] Obiettivo, domande di ricerca e ipotesi.
-  \item[Capitolo~\ref{cap:architettura}] Vista dei componenti: le cinque versioni del sistema.
-  \item[Capitolo~\ref{cap:deployment}] Vista di deployment: ambiente locale e ambiente AWS.
-  \item[Capitolo~\ref{cap:guasti}] Modello dei guasti e metodo di iniezione.
-  \item[Capitolo~\ref{cap:decisioni}] Decisioni architetturali (ADR) e tabella dei parametri.
-  \item[Capitolo~\ref{cap:misura}] Protocollo di misura: indicatori, obiettivi, matrice degli esperimenti.
-  \item[Capitolo~\ref{cap:previsioni}] Previsioni quantitative, scritte prima delle misure.
-  \item[Capitolo~\ref{cap:validita}] Minacce alla validità e loro mitigazione.
-  \item[Appendice~\ref{app:pianificazione}] Fasi, milestone e stima dello sforzo.
-  \item[Appendice~\ref{app:revisione}] Revisione critica del piano: problemi trovati e correzioni.
-\end{description}
-
-\section{Riferimenti}
-
-\begin{itemize}
-  \item Materiale dell'insegnamento \insegnamento{} (architetture software, metriche, project management, elasticità, test di carico).
-  \item B.~Beyer, C.~Jones, J.~Petoff, N.~R.~Murphy, \textit{Site Reliability Engineering}, O'Reilly, 2016 (indicatori, obiettivi e budget di errore).
-  \item C.~Wohlin et al., \textit{Experimentation in Software Engineering}, Springer, 2012 (minacce alla validità).
-  \item Documentazione ufficiale di Kubernetes, CloudNativePG, KEDA, RabbitMQ e Apache JMeter.
-  \item Repository del progetto: \url{https://github.com/terrecruis/kintsugi}.
+  \item Capitoli 2--4: cosa vogliamo scoprire, le cinque architetture, dove girano.
+  \item Capitoli 5--6: i guasti che proviamo e le decisioni prese.
+  \item Capitoli 7--9: come misuriamo, cosa prevediamo, i limiti.
+  \item Appendici: pianificazione e correzioni fatte al piano.
 \end{itemize}

@@ -1,90 +1,52 @@
-\chapter{Deployment}
+\chapter{Dove gira il sistema}
 \label{cap:deployment}
 
-\section{Ambiente A -- Kubernetes locale}
+\section{Ambiente A -- sul nostro computer}
 
-Cluster kind con \textbf{tre nodi}: un nodo di controllo e due nodi worker (figura~\ref{fig:deploy-locale}), descritti in \texttt{deploy/k8s/kind-cluster.yaml} con Kubernetes v1.37.0 fissato per entrambe le macchine. A cluster vuoto i tre nodi occupano circa 870 MiB. Con un solo nodo worker tutti i pod starebbero sullo stesso nodo: non si potrebbero separare primario e standby di V4 né simulare la perdita di un nodo (F6).
+Usiamo \textbf{Kubernetes}, un programma che avvia i servizi, li tiene d'occhio e li riavvia da solo quando si rompono. Lo facciamo girare sul computer con \textbf{kind}, che simula tre macchine dentro Docker:
+
+\begin{description}
+  \item[control-plane] il ``cervello'' di Kubernetes e la porta d'ingresso; non lo rompiamo mai.
+  \item[worker-1] ospita database e coda.
+  \item[worker-2] ospita le altre copie; è la macchina che spegniamo in uno dei test.
+\end{description}
 
 \begin{figure}[htbp]
 \centering
-\resizebox{\linewidth}{!}{%
+\resizebox{0.9\linewidth}{!}{%
 \begin{tikzpicture}[node distance=0.35cm]
-\node[box] (pg) {PostgreSQL\\+ volume};
-\node[box, below=of pg] (mq) {RabbitMQ\\+ volume};
+\node[box] (pg) {Database};
+\node[box, below=of pg] (mq) {Coda};
 \node[box, below=of mq] (a1) {API, worker};
 \node[draw=unina, dashed, rounded corners, fit=(pg)(mq)(a1), inner sep=8pt,
       label={[font=\small\color{unina}]above:worker-1}] (w1) {};
-\node[box, right=2.2cm of pg] (sb) {Standby\\{\scriptsize (solo V4)}};
-\node[box, below=of sb] (a2) {API, worker};
-\node[draw=unina, dashed, rounded corners, fit=(sb)(a2), inner sep=8pt,
+\node[box, right=2.2cm of pg] (a2) {API, worker};
+\node[draw=unina, dashed, rounded corners, fit=(a2), inner sep=8pt,
       label={[font=\small\color{unina}]above:worker-2}] (w2) {};
-\node[box, left=2.4cm of pg] (cp) {API server,\\scheduler, etcd};
-\node[box, below=of cp] (np) {Punto di\\ingresso};
-\node[draw=unina, dashed, rounded corners, fit=(cp)(np), inner sep=8pt,
+\node[box, left=2.4cm of pg] (cp) {Cervello di\\Kubernetes};
+\node[draw=unina, dashed, rounded corners, fit=(cp), inner sep=8pt,
       label={[font=\small\color{unina}]above:control-plane}] (c) {};
-\node[box, below=1.4cm of np] (jm) {JMeter\\(host)};
-\draw[freccia] (jm) -- (np);
-\draw[freccia] (np.east) -- (w1.west);
-\draw[freccia, dashed] (pg) -- node[above, font=\scriptsize] {replica (V4)} (sb);
+\node[box, below=2.2cm of cp] (jm) {Generatore\\di ordini};
+\draw[freccia] (jm) -- (c);
+\draw[freccia] (c.east) -- (w1.west);
 \end{tikzpicture}}
-\caption{Ambiente A: cluster kind a tre nodi.}
+\caption{L'ambiente locale: tre macchine simulate.}
 \label{fig:deploy-locale}
 \end{figure}
 
-\begin{table}[htbp]
-\centering
-\caption{Posizionamento dei componenti nell'ambiente A.}
-\label{tab:posizionamento}
-\begin{tabularx}{\linewidth}{@{}llL@{}}
-\toprule
-\textbf{Componente} & \textbf{Nodo} & \textbf{Motivo} \\
-\midrule
-Control plane & control-plane & Separato dai carichi; nessun esperimento lo guasta \\
-Punto di ingresso (NodePort) & control-plane & La porta esposta all'host non dipende dai nodi che si guastano \\
-PostgreSQL, RabbitMQ (V1--V3, V5) & worker-1 & Volume locale legato al nodo (D0006) \\
-PostgreSQL primario / standby (V4) & worker-1 / worker-2 & Anti-affinità: un guasto di nodo non colpisce entrambe le copie \\
-API, worker & worker-1, worker-2 & Distribuiti sui due nodi \\
-Toxiproxy & worker-1 & Accanto al database \\
-JMeter & host & Fuori dal cluster \\
-\bottomrule
-\end{tabularx}
-\end{table}
+Il file \texttt{deploy/k8s/kind-cluster.yaml} descrive queste tre macchine: chiunque può ricrearle identiche con un comando.
 
-\begin{table}[htbp]
-\centering
-\caption{Macchine dell'ambiente A (D0013).}
-\label{tab:macchine}
-\begin{tabularx}{\linewidth}{@{}llL@{}}
-\toprule
-\textbf{Macchina} & \textbf{Memoria a Docker} & \textbf{Ruolo} \\
-\midrule
-Mac di F.~Terrecuso, 8 GB & 5 GB & Sviluppo e prove; nessuna misura entra nei risultati \\
-Computer di G.~Vellotti, $\geq$ 16 GB & $\sim$8 GB & Capacità di base, verifica di M4, campagna di misura, tutte le prove di V4 \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\paragraph{I due computer del gruppo.} Il Mac di F.~Terrecuso (8 GB) serve per sviluppare e provare. Le misure vere si fanno sul computer di G.~Vellotti (16 GB), così la memoria scarsa non falsa i risultati (decisione D0013).
 
-\section{Ambiente B -- AWS}
+\section{Ambiente B -- nel cloud (AWS)}
 
-EKS con nodi su 2--3 zone. Il bilanciatore è un ALB gestito dall'AWS Load Balancer Controller, con target di tipo IP e \textit{pod readiness gate}: un pod riceve traffico dall'ALB solo dopo che l'ALB stesso lo considera sano. PostgreSQL e RabbitMQ stanno in una sola zona, perché i volumi EBS sono legati alla zona. JMeter gira su un'istanza EC2 nella stessa regione, così la rete domestica non entra nelle misure. Su AWS si ripete un sottoinsieme degli esperimenti: V2 e V3 sotto W1 e W2, guasti F1, F2, F3 e F6.
+Ripetiamo una parte degli esperimenti su AWS, con tre macchine vere in tre edifici diversi. I servizi usati:
 
-\subsection{Differenze non eliminabili}
-\label{sec:differenze-aws}
+\begin{description}
+  \item[EKS] il ``cervello'' di Kubernetes, gestito da Amazon.
+  \item[EC2] le macchine: tre per il sistema, una per generare gli ordini.
+  \item[ALB] il bilanciatore che smista le richieste.
+  \item[EBS] i dischi del database e della coda.
+\end{description}
 
-\begin{table}[htbp]
-\centering
-\caption{Differenze tra i due ambienti che i parametri non possono annullare.}
-\label{tab:differenze}
-\begin{tabularx}{\linewidth}{@{}lLLL@{}}
-\toprule
-\textbf{Aspetto} & \textbf{Locale} & \textbf{AWS} & \textbf{Effetto atteso} \\
-\midrule
-Rilevamento dal bilanciatore & Readiness, periodo minimo 1 s & Controlli dell'ALB, intervallo minimo 5 s, soglia minima 2 & Rilevamento più lento su AWS \\
-Uscita dal traffico & Aggiornamento degli endpoint di kube-proxy & Deregistrazione del target (300 s di default, portata a pochi secondi) & Richieste ancora instradate a un pod uscente \\
-Rete & Stessa macchina & Rete tra zone & Latenza di base più alta \\
-Hardware & Host condiviso & Nodi separati & Repliche davvero indipendenti \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Per questo RQ6 chiede di \emph{attribuire} le differenze, non di ottenere risultati identici. I valori dell'ALB vanno verificati nella prova di S6.
+Costo stimato dell'intera fase: circa 15--20 dollari, coperti dai crediti gratuiti di un account nuovo. Il rischio vero è dimenticare risorse accese: ogni sessione termina con una verifica che tutto sia stato spento.

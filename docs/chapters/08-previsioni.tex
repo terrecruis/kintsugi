@@ -1,98 +1,41 @@
-\chapter{Previsioni quantitative}
+\chapter{Cosa prevediamo}
 \label{cap:previsioni}
 
-Le previsioni si scrivono e si committano \textbf{prima} di qualsiasi misura (milestone M1): la data del commit ne è la prova, come in una preregistrazione. Dopo non si modificano; eventuali correzioni si aggiungono in fondo, datate e motivate. I tempi di avvio dei componenti si stimano con una misura a vuoto in F3, prima della campagna.
+Le previsioni si scrivono e si salvano su Git \textbf{prima} degli esperimenti: la data del salvataggio dimostra che non le abbiamo aggiustate dopo aver visto i risultati.
 
-\section{Modelli per classe di guasto}
+\section{Come si calcola un tempo di fermo}
 
-Simboli: $\lambda$ ritmo degli arrivi, $N$ repliche dell'API, $M$ worker, $\mu$ capacità di un worker, $p$ e $s$ periodo e soglia di una sonda.
-
-\subsection*{Crash di un componente senza stato (F1, F2)}
-In V1 non resta nessuna istanza:
 \[
-  D \approx t_{\text{avvio}} + t_{\text{pronto}}, \qquad t_{\text{pronto}} \leq p_r .
-\]
-In V2 le altre istanze continuano a servire, quindi $D_{\text{acc}} \approx 0$. Falliscono solo le richieste in corso sull'istanza caduta e quelle instradate verso di essa prima che esca dagli endpoint:
-\[
-  R_{\text{fallite}} \approx \frac{\lambda}{N}\,\bigl(t_{\text{servizio}} + t_{\text{propagazione}}\bigr).
+  \text{fermo} \approx \text{tempo per accorgersene} + \text{tempo per riavviare} + \text{tempo per tornare pronto}
 \]
 
-\subsection*{Blocco (F7)}
-Il rilevamento dipende solo dalle sonde, e tutte le richieste instradate all'istanza bloccata vanno in timeout:
-\[
-  t_{\text{rilevamento}} \approx p_r \cdot s_r, \qquad
-  R_{\text{fallite}} \approx \frac{\lambda}{N}\,\bigl(t_{\text{rilevamento}} + t_{\text{propagazione}}\bigr).
-\]
-Con i parametri della tabella~\ref{tab:parametri}: circa 2 s con le sonde rapide, circa 30 s con quelle predefinite. Ci si aspetta quindi un rapporto di circa 15 tra le richieste fallite nelle due configurazioni (H3).
+\begin{itemize}
+  \item Se un programma \textbf{si spegne}, Kubernetes se ne accorge subito.
+  \item Se \textbf{si congela}, se ne accorge solo al controllo successivo, quindi conta quanto spesso controlla.
+  \item Con la \textbf{coda} (V3, V5) va aggiunto il tempo per smaltire gli ordini accumulati.
+  \item Con il \textbf{database di riserva} (V4) il riavvio è sostituito dal passaggio alla riserva.
+\end{itemize}
 
-\subsection*{Crash di un componente con stato (F3, F4 su V1--V3)}
-\[
-  D \approx t_{\text{avvio}} + t_{\text{recupero WAL}} + t_{\text{riconnessione}} .
-\]
-In V3 l'accettazione non è colpita dal crash del database ($D_{\text{acc}} \approx 0$). Il completamento lo è, e dopo il ripristino serve il tempo di smaltire l'arretrato:
-\[
-  D_{\text{compl}} \approx D_{\text{db}} + \frac{\lambda\, D_{\text{db}}}{\mu M - \lambda}.
-\]
+\section{Dalla misura alla disponibilità}
 
-\subsection*{Failover (F4 su V4)}
-\[
-  D \approx t_{\text{rilevamento}}^{\text{operatore}} + t_{\text{promozione}} + t_{\text{riconnessione}}, \qquad
-  \mathrm{E}[\text{persi}] \approx
-  \begin{cases}
-    \lambda \cdot \ell & \text{V4a (ritardo di replica } \ell\text{)} \\
-    0 & \text{V4s}
-  \end{cases}
-\]
-In assenza di guasti, V4s paga a ogni commit un giro di rete verso lo standby più la sua scrittura su disco.
-
-\subsection*{Picco con autoscaling (W2 su V5)}
-\[
-  t_{\text{reazione}} \approx \tfrac{1}{2}\,t_{\text{lettura}} + t_{\text{HPA}} + t_{\text{avvio}}, \qquad
-  \text{arretrato}_{\max} \approx \bigl(\lambda_{\text{picco}} - \mu M_{\min}\bigr)\, t_{\text{reazione}} .
-\]
-
-\section{Proiezione della disponibilità}
-
-Per D0017 l'indisponibilità attesa è $U = \sum_i \lambda_i D_i$ e la disponibilità $A = 1 - U$, espressa anche in ``nove'' ($-\log_{10} U$). Le frequenze dei guasti sono \textbf{ipotesi dichiarate}: i guasti li iniettiamo noi, quindi l'MTBF non si può misurare.
-
-Attenzione: la frequenza di crash dell'API è per \emph{istanza}. Con $N$ repliche i crash diventano $N$ volte più frequenti, anche se ognuno costa molto meno: la proiezione deve tenerne conto.
-
-\begin{table}[htbp]
-\centering
-\caption{Frequenze ipotizzate dei guasti (valori illustrativi, da confermare in F1).}
-\label{tab:frequenze}
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Guasto} & \textbf{Frequenza ipotizzata} \\
-\midrule
-Crash di un'istanza dell'API o di un worker & 1 al giorno per istanza \\
-Blocco di un'istanza dell'API & 1 a settimana per istanza \\
-Crash del broker & 1 a settimana \\
-Crash del database & 1 a settimana \\
-Perdita di un nodo & 1 al mese \\
-\bottomrule
-\end{tabular}
-\end{table}
+Ipotizziamo quanto spesso capita ogni guasto (per esempio, un'API che si spegne una volta al giorno) e moltiplichiamo per il fermo misurato. Sommando tutti i guasti otteniamo i minuti di fermo al mese, da confrontare con il limite di 43 minuti (D0017).
 
 \section{Previsioni}
 
 \begin{table}[htbp]
 \centering
-\caption{Previsioni per guasto e versione.}
+\caption{Previsioni da completare prima degli esperimenti.}
 \label{tab:previsioni}
 \begin{tabular}{@{}llcc@{}}
 \toprule
-\textbf{Guasto} & \textbf{Versione} & \textbf{Downtime previsto} & \textbf{Richieste fallite previste} \\
+\textbf{Guasto} & \textbf{Versione} & \textbf{Fermo previsto} & \textbf{Ordini falliti previsti} \\
 \midrule
 F1 & V1 & \todo{} & \todo{} \\
 F1 & V2 & \todo{} & \todo{} \\
-F1 & V3 & \todo{} & \todo{} \\
 F4 & V1, V2 & \todo{} & \todo{} \\
-F4 & V3 (completamento) & \todo{} & \todo{} \\
-F4 & V4a / V4s & \todo{} & \todo{} \\
-F7 & V2, sonde rapide & \todo{} & \todo{} \\
-F7 & V2, sonde predefinite & \todo{} & \todo{} \\
-W2 & V3 / V5 (smaltimento) & \todo{} & -- \\
+F4 & V3 & \todo{} & \todo{} \\
+F4 & V4 & \todo{} & \todo{} \\
+F7 & V2 & \todo{} & \todo{} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -1,12 +1,12 @@
-\begin{decisione}{D0008}{Timeout del client e deadline lato server}{Proposta}{22/10/2026}
+\begin{decisione}{D0008}{Quanto aspettare prima di arrendersi}{Proposta}{22/10/2026}
 
 \contesto
-Se l'API continua a lavorare dopo che il client ha rinunciato, spreca capacità proprio durante il guasto e produce ordini ``completati dopo il timeout'': il client crede che l'ordine sia fallito e, in un sistema reale, lo rimanderebbe.
+Se l'API continua a lavorare dopo che il cliente ha già rinunciato, spreca risorse proprio durante il guasto.
 
 \scelta
-Timeout del client di 2 s, identico per tutte le versioni. L'API applica a ogni richiesta una deadline di 1,5 s: oltre quel limite interrompe il lavoro e risponde con un errore. Il database ha uno \texttt{statement\_timeout} di 1 s. Ogni livello ha un limite più stretto di quello sopra, così l'errore arriva al client prima del suo timeout (propagazione della deadline).
+Il cliente aspetta al massimo 2 secondi; l'API si arrende dopo 1,5 secondi e risponde con un errore. Così il cliente riceve sempre una risposta prima di rinunciare.
 
 \conseguenze
-Meno lavoro sprecato e categorie degli ordini più nette. I ``completati dopo il timeout'' residui (commit avvenuto mentre la risposta tornava indietro) diventano essi stessi una misura. Nelle versioni asincrone la deadline vale per la pubblicazione in coda, non per l'elaborazione, che per definizione avviene dopo la risposta.
+Meno lavoro sprecato e risultati più chiari da interpretare.
 
 \end{decisione}

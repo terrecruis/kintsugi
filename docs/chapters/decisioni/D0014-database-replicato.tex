@@ -1,14 +1,12 @@
-\begin{decisione}{D0014}{V4: database replicato con failover}{Accettata}{22/10/2026}
+\begin{decisione}{D0014}{Aggiungere V4 (database di riserva)}{Accettata}{22/10/2026}
 
 \contesto
-In V1--V3 il database è un punto unico di guasto: nessuna replica dell'API può portare la disponibilità oltre quella di PostgreSQL. Per misurare cosa cambia eliminando il punto unico di guasto \emph{con stato} serve una versione con database ridondante.
+In V1--V3 il database è unico: se cade, si ferma tutto, comunque sia fatto il resto.
 
 \scelta
-V4 è V2 con PostgreSQL gestito dall'operatore CloudNativePG: primario e standby su nodi diversi, failover automatico, servizio \texttt{-rw} che segue il primario. Due modalità di replica: asincrona (V4a) e sincrona (V4s). Si misura sotto F4 (crash del primario) e senza guasti, per il costo in latenza.
-
-Alternative scartate: Patroni (diffuso, ma con più componenti da configurare); replica gestita a mano (non realistica); servizio gestito come RDS Multi-AZ (esiste solo su AWS, quindi non confrontabile con il locale).
+V4 aggiunge una copia di riserva del database che subentra in automatico (con lo strumento CloudNativePG). La proviamo in due modalità: veloce ma con possibile perdita degli ultimi ordini, oppure sicura ma più lenta.
 
 \conseguenze
-Serve più memoria (due istanze più l'operatore): V4 si misura solo sulla macchina da 16 GB (D0013). La riconnessione dopo il failover diventa un requisito dell'applicazione: il pool deve scartare le connessioni verso il vecchio primario. Il reset di ogni run deve ripristinare la topologia iniziale (primario su worker-1, standby allineato). La campagna cresce di 30 run.
+Richiede più memoria: si misura solo sul computer da 16 GB.
 
 \end{decisione}

@@ -1,50 +1,38 @@
-\chapter{Modello dei guasti}
+\chapter{I guasti che proviamo}
 \label{cap:guasti}
 
-\section{Classi di guasto}
-
-\begin{description}
-  \item[Crash] Il processo termina. Kubernetes se ne accorge subito, perché il processo è uscito, e riavvia il container. È il guasto più facile da rilevare.
-  \item[Blocco] Il processo è vivo ma non risponde (\textit{hang}). Nessun segnale esplicito: lo rilevano solo le sonde, dopo periodo $\times$ soglia. È il guasto in cui i parametri delle sonde contano davvero, ed è il più insidioso nei sistemi reali.
-  \item[Degrado] Il componente risponde, ma lentamente. Nessuno lo ripara: conta come il resto del sistema lo tollera (timeout, deadline, riprove).
-  \item[Perdita di un nodo] Sparisce un'intera macchina con i suoi pod. Kubernetes reagisce solo dopo un periodo di tolleranza e un'attesa prima di espellere i pod.
-\end{description}
-
-\section{Guasti iniettati}
+Rompiamo un pezzo alla volta, mentre arrivano ordini, e osserviamo come il sistema si ripara da solo. Nessun intervento a mano.
 
 \begin{table}[htbp]
 \centering
-\caption{Guasti iniettati, uno per run, sotto carico W1.}
+\caption{I sette guasti.}
 \label{tab:guasti}
-\small
-\begin{tabularx}{\linewidth}{@{}llllLl@{}}
+\begin{tabularx}{\linewidth}{@{}lLl@{}}
 \toprule
-\textbf{ID} & \textbf{Guasto} & \textbf{Classe} & \textbf{Rilevamento} & \textbf{Ripristino} & \textbf{Versioni} \\
+\textbf{ID} & \textbf{Cosa rompiamo} & \textbf{Versioni} \\
 \midrule
-F1 & Crash di un'istanza API & crash & immediato & Kubelet riavvia il container; l'istanza è esclusa dal traffico finché non è pronta & V1--V3 \\
-F2 & Crash di tutti i worker & crash & immediato & Kubelet; gli ordini attendono in coda & V3 \\
-F3 & Crash del broker & crash & immediato & Kubelet; code durevoli e volume conservano i messaggi; API e worker si riconnettono & V3 \\
-F4 & Crash del database & crash & immediato & V1--V3: kubelet e recupero dal WAL. V4: l'operatore promuove lo standby & V1--V4 \\
-F5 & Latenza verso il DB & degrado & -- & Nessuno: si osservano timeout e riprove & V2, V3 \\
-F6 & Perdita di worker-2 & nodo & dopo tolleranza & Pod ricreati altrove dopo l'attesa di espulsione & V2, V3 (opz.) \\
-F7 & Blocco di un'istanza API & blocco & sonde & Readiness la esclude, liveness la riavvia & V2 \\
+F1 & Spegniamo all'improvviso una copia dell'API & V1, V2, V3 \\
+F2 & Spegniamo tutti i worker & V3 \\
+F3 & Spegniamo la coda & V3 \\
+F4 & Spegniamo il database & V1--V4 \\
+F5 & Rallentiamo il collegamento con il database & V2, V3 \\
+F6 & Spegniamo un'intera macchina \textit{(facoltativo)} & V2, V3 \\
+F7 & ``Congeliamo'' una copia dell'API: accesa, ma non risponde & V2 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-F7 si esegue con due configurazioni delle sonde, rapida e predefinita di Kubernetes (sezione~\ref{sec:parametri}): è l'esperimento che misura quanto il rilevamento dipende dai parametri (RQ3, H3).
-
-\section{Metodo di iniezione}
-\label{sec:iniezione}
-
-Il metodo è fissato dalla decisione D0016.
+\section{Spegnere e congelare non sono la stessa cosa}
 
 \begin{itemize}
-  \item \textbf{Crash} = \texttt{SIGKILL}; \textbf{blocco} = \texttt{SIGSTOP}. Non si usa \texttt{kubectl delete pod}: è una terminazione ordinata (SIGTERM, periodo di grazia, poi un pod nuovo), cioè un evento pianificato, non un guasto.
-  \item I segnali si inviano \textbf{dal nodo} kind che ospita il pod (\texttt{docker exec <nodo> kill -KILL <pid>}), non dall'interno del container. Il processo principale di un container è il PID~1 del suo namespace, e il kernel ignora \texttt{SIGKILL} e \texttt{SIGSTOP} inviati a PID~1 dallo stesso namespace; dal namespace del nodo, che ne è antenato, vengono consegnati.
-  \item Lo stesso comando che invia il segnale legge l'orologio del nodo: l'istante del guasto è registrato sia sull'orologio dell'host (per le metriche lato client) sia su quello del cluster (per le metriche lato server).
-  \item La latenza (F5) si inietta con Toxiproxy, che è nel percorso verso il database in \emph{tutti} i run di V2 e V3, con latenza zero quando inattivo: così il proxy stesso non introduce una differenza tra run con e senza guasto.
-  \item La perdita di un nodo (F6) si ottiene fermando il container del nodo kind \texttt{worker-2}.
+  \item Un programma che \textbf{si spegne} viene notato subito, e Kubernetes lo riavvia.
+  \item Un programma che \textbf{si congela} sembra ancora acceso: Kubernetes se ne accorge solo con i suoi controlli periodici (``sei vivo?''). Quanto ci mette dipende da quanto spesso controlla: è quello che misuriamo con F7.
 \end{itemize}
 
-Su EKS i segnali si inviano da un pod privilegiato sul nodo, che condivide il namespace dei processi dell'host: il meccanismo cambia, il guasto resta lo stesso.
+\section{Come li provochiamo}
+
+\begin{itemize}
+  \item Usiamo un vero ``spegnimento brusco'' del programma, non lo spegnimento ordinato che Kubernetes offre (che non è un guasto ma una chiusura gentile).
+  \item Il comando parte dalla macchina simulata che ospita il programma: dall'interno del programma stesso il sistema operativo lo ignorerebbe.
+  \item Registriamo l'istante esatto del guasto, al millesimo di secondo.
+\end{itemize}

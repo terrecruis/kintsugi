@@ -1,12 +1,12 @@
-\begin{decisione}{D0012}{Un repository, versioni come configurazioni}{Accettata}{22/10/2026}
+\begin{decisione}{D0012}{Un solo codice per tutte le versioni}{Accettata}{22/10/2026}
 
 \contesto
-Le tre versioni (V1, V2, V3) vanno confrontate tra loro. Una soluzione possibile era tenerle su tre branch Git separati.
+Le cinque versioni vanno confrontate in modo equo.
 
 \scelta
-Un solo repository e un solo branch \texttt{main}. Le versioni sono configurazioni dello stesso codice: una variabile \texttt{MODE} (sincrono o asincrono) e un overlay Kubernetes per versione. I branch servono solo a isolare una singola modifica, che rientra in \texttt{main} con una pull request.
+Un solo repository e un solo codice: le versioni differiscono solo nella configurazione, non in copie separate del programma.
 
 \conseguenze
-Le tre versioni girano sempre sullo stesso commit: un bug corretto vale per tutte e non falsa il confronto, e lo script degli esperimenti può eseguirle in ordine casuale dallo stesso checkout. È coerente con l'indicazione del corso di evitare i branch quando possibile.
+Un errore corretto vale per tutte le versioni, quindi non falsa il confronto.
 
 \end{decisione}
