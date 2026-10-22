@@ -30,6 +30,7 @@ harness/
 analysis/       categorizzazione degli ordini, statistiche, grafici
 data/           risultati dei run (non versionati, vedi data/README.md)
 docs/
+  fasi-e-milestone.md        fasi F0-F8, roadmap e milestone M1-M7
   A1-requisiti-e-misure.md   definizioni di misura
   A2-componenti.md           diagrammi dei componenti V1-V3
   A3-deployment.md           ambienti A (locale) e B (AWS)
