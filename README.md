@@ -179,7 +179,7 @@ Genera `docs/main.pdf`: architettura, decisioni (ADR), modello dei guasti, proto
 
 | Milestone | Scadenza | Obiettivo |
 |---|---|---|
-| **M1** | 04/11/2026 | Architettura, decisioni, previsioni; ok del docente su V4 e V5 |
+| **M1** | 04/11/2026 | Architettura, decisioni, previsioni |
 | **M2** | 11/11/2026 | Applicazione minima V1–V3 |
 | **M3** | 25/11/2026 | V1–V3 su kind a 3 nodi; primo guasto misurato |
 | **M4** | 09/12/2026 | Banco di prova completo; failover di V4 e scalatura di V5 verificati |

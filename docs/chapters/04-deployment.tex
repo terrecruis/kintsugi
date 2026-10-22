@@ -3,7 +3,7 @@
 
 \section{Ambiente A -- Kubernetes locale}
 
-Cluster kind con \textbf{tre nodi}: un nodo di controllo e due nodi worker (figura~\ref{fig:deploy-locale}). Con un solo nodo worker tutti i pod starebbero sullo stesso nodo: non si potrebbero separare primario e standby di V4 né simulare la perdita di un nodo (F6).
+Cluster kind con \textbf{tre nodi}: un nodo di controllo e due nodi worker (figura~\ref{fig:deploy-locale}), descritti in \texttt{deploy/k8s/kind-cluster.yaml} con Kubernetes v1.37.0 fissato per entrambe le macchine. A cluster vuoto i tre nodi occupano circa 870 MiB. Con un solo nodo worker tutti i pod starebbero sullo stesso nodo: non si potrebbero separare primario e standby di V4 né simulare la perdita di un nodo (F6).
 
 \begin{figure}[htbp]
 \centering

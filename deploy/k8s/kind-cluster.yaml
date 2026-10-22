@@ -1,0 +1,37 @@
+# Cluster locale di Kintsugi (ambiente A): 1 control plane + 2 worker.
+# Creazione:  kind create cluster --name kintsugi --config deploy/k8s/kind-cluster.yaml
+# Rimozione:  kind delete cluster --name kintsugi
+#
+# Perché tre nodi: con un solo worker tutti i pod starebbero sulla stessa macchina,
+# e non si potrebbero separare primario e standby di V4 né simulare la perdita
+# di un nodo (F6). Vedi il capitolo "Deployment" del documento di architettura.
+#
+# La versione di Kubernetes è fissata (image) perché kind sceglie un default
+# diverso a ogni sua release: entrambe le macchine devono avere lo stesso cluster.
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  # Control plane: il "cervello" del cluster e il punto di ingresso dall'host.
+  # Nessun esperimento lo guasta, quindi la porta esposta resta sempre raggiungibile.
+  - role: control-plane
+    image: kindest/node:v1.37.0
+    extraPortMappings:
+      - containerPort: 30080   # NodePort del Service dell'API
+        hostPort: 8080         # JMeter invia a http://localhost:8080
+        listenAddress: "127.0.0.1"
+      - containerPort: 30030   # NodePort di Grafana
+        hostPort: 3000         # dashboard su http://localhost:3000
+        listenAddress: "127.0.0.1"
+
+  # worker-1: ospita i componenti con stato (PostgreSQL, RabbitMQ, primario di V4).
+  - role: worker
+    image: kindest/node:v1.37.0
+    labels:
+      kintsugi/ruolo: dati
+
+  # worker-2: solo componenti senza stato (e lo standby di V4); è il nodo spento in F6.
+  - role: worker
+    image: kindest/node:v1.37.0
+    labels:
+      kintsugi/ruolo: calcolo

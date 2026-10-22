@@ -12,7 +12,7 @@ Progettare e scrivere le previsioni (M1) → costruire l'app (M2) → portarla s
 
 | Milestone | Scadenza | Fasi che chiude | Criterio di passaggio | Se non passa |
 |---|---|---|---|---|
-| **M1** Architettura e previsioni | S2 · 04/11/2026 | F0, F1 | Decisioni scritte, parametri fissati, previsioni committate; ok del docente su V4 e V5 | Non si inizia F3 |
+| **M1** Architettura e previsioni | S2 · 04/11/2026 | F0, F1 | Decisioni scritte, parametri fissati, previsioni committate | Non si inizia F3 |
 | **M2** App minima | S3 · 11/11/2026 | F2 | I quattro criteri di F2 soddisfatti | Non si tocca Kubernetes |
 | **M3** Kubernetes locale | S5 · 25/11/2026 | F3 | V1-V3 su kind a 3 nodi; l'harness minimo misura un crash F1 iniettato dal nodo con risoluzione sotto il secondo | Rivedere il metodo di misura prima di proseguire |
 | **M3b** Prova AWS | S6 · 02/12/2026 | F6 (prova) | Cluster creato e distrutto, costi e limiti noti | Ripianificare (o ridurre) subito la fase AWS, non in S9 |
@@ -56,7 +56,7 @@ Progettare e scrivere le previsioni (M1) → costruire l'app (M2) → portarla s
 **Fatto quando:** `kubectl get nodes` risponde sul cluster locale e l'allarme di budget è attivo.
 
 ### F1 — Architettura e protocollo di misura · S1-S2 · ~32 h · → M1
-**Attività:** decisioni D0001-D0017 nel documento di architettura (`docs/`) · tabella unica dei parametri · protocollo sperimentale (domande, matrice, indicatori e SLO, ripetizioni, validità dei run) · previsioni per V1-V5 e F1-F7 · mail al docente per approvare V4 e V5.
+**Attività:** decisioni D0001-D0017 nel documento di architettura (`docs/`) · tabella unica dei parametri · protocollo sperimentale (domande, matrice, indicatori e SLO, ripetizioni, validità dei run) · previsioni per V1-V5 e F1-F7.
 **Fatto quando:** entrambi sappiamo spiegare ogni diagramma e ogni decisione, e le previsioni sono scritte e committate **prima** di qualsiasi misura (tag `m1`).
 
 ### F2 — Applicazione minima e tre versioni · S2-S3 · ~20 h · → M2
