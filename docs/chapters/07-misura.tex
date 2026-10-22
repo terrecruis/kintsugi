@@ -1,0 +1,76 @@
+\chapter{Protocollo di misura}
+\label{cap:misura}
+
+\section{Definizioni}
+
+\begin{description}
+\item[Richiesta riuscita] Risposta corretta entro il timeout comune del client.
+\item[Disponibilità di accettazione] Frazione di secondi in cui almeno il 99\% delle richieste riesce, vista dal client.
+\item[Disponibilità di completamento] Frazione di secondi in cui almeno il 99\% degli ordini \emph{ricevuti} in quel secondo è salvato nel database entro un limite fissato. Per V3 è la misura che conta: con il database fermo l'API continua ad accettare, ma nessun ordine viene completato.
+\item[Ripristinato] Primo istante da cui seguono 5 secondi consecutivi disponibili sia in accettazione sia in completamento. Non coincide con il riavvio del pod.
+\item[Downtime per guasto] Tempo tra il guasto e il ripristino, per accettazione e per completamento.
+\item[Tempo end-to-end] Istante di commit nel database meno istante di ricezione nell'API, entrambi da orologi del cluster. È la metrica comune alle tre versioni.
+\end{description}
+
+\section{Categorie degli ordini}
+
+Ogni ordine inviato, identificato dal suo ID, cade in esattamente una delle prime cinque categorie della tabella~\ref{tab:categorie}.
+
+\begin{table}[h]
+\centering
+\caption{Categorie degli ordini.}
+\label{tab:categorie}
+\begin{tabularx}{\linewidth}{@{}lll@{}}
+\toprule
+\textbf{Categoria} & \textbf{Esito visto dal client} & \textbf{Stato nel database} \\
+\midrule
+Completati in tempo        & positivo          & salvato \\
+Completati dopo il timeout & errore o timeout  & salvato \\
+Falliti                    & errore o timeout  & non salvato \\
+In dead-letter             & accettato         & rielaborato a fine run \\
+\textbf{Persi}             & \textbf{positivo} & \textbf{mai salvato} \\
+Duplicati                  & --                & rifiutato dal vincolo di unicità \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Carichi e matrice degli esperimenti}
+
+Il carico è generato a ritmo costante, così un rallentamento del sistema non riduce le richieste inviate e non si nasconde (\textit{coordinated omission}). Tre profili: \textbf{W1} costante, \textbf{W2} picco improvviso, \textbf{W3} sovraccarico prolungato, fissati rispetto alla capacità misurata.
+
+\begin{table}[h]
+\centering
+\caption{Matrice degli esperimenti.}
+\label{tab:matrice}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Gruppo} & \textbf{Configurazioni} & \textbf{Ripetizioni} & \textbf{Run} \\
+\midrule
+Senza guasto (3 versioni $\times$ 3 carichi) & 9  & 5  & 45 \\
+Con guasto (F1--F5)                          & 10 & 10 & 100 \\
+\midrule
+\textbf{Totale}                              &    &    & \textbf{145} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Struttura di un run}
+
+\begin{enumerate}
+  \item \textbf{Reset}: coda vuota, tabella ordini vuota, pod pronti.
+  \item \textbf{Riscaldamento}: un minuto di carico, escluso dalle statistiche.
+  \item \textbf{Guasto}: iniettato al minuto 2, istante registrato.
+  \item \textbf{Osservazione}: fino al ripristino più 2 minuti, al massimo 10 minuti.
+  \item \textbf{Esportazione} dei dati di client, database ed eventi.
+\end{enumerate}
+
+\section{Validità di un run}
+\label{sec:validita}
+
+\begin{itemize}
+  \item Reset completato.
+  \item Ritmo realmente inviato entro $\pm 5\%$ di quello previsto.
+  \item CPU dell'host sotto la soglia fissata in F4.
+  \item Nessuno swap dell'host durante il run (D0013).
+  \item Run eseguito sulla macchina della campagna (D0013).
+\end{itemize}

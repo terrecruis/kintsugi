@@ -1,0 +1,40 @@
+\chapter{Introduzione}
+\label{cap:introduzione}
+
+\section{Scopo del documento}
+
+Questo documento descrive l'architettura del sistema \progetto{}, le decisioni che l'hanno determinata e il protocollo con cui viene misurata. È il riferimento comune per lo sviluppo, per gli esperimenti e per la discussione all'esame.
+
+\section{Ambito del progetto}
+
+\progetto{} è un servizio di ordini volutamente semplice, implementato in tre versioni architetturali (capitolo~\ref{cap:architettura}). Il servizio non è l'oggetto della valutazione: è il veicolo con cui si misura, attraverso guasti iniettati di proposito, come le scelte architetturali influenzano disponibilità, prestazioni e ripristino.
+
+Il nome richiama il \textit{kintsugi}, l'arte giapponese di riparare la ceramica rotta con l'oro, mettendo in evidenza le crepe invece di nasconderle: ogni guasto misurato mostra dove l'architettura cede e come si ricompone.
+
+\section{Destinatari}
+
+\begin{itemize}
+  \item I membri del gruppo, come riferimento durante sviluppo ed esperimenti.
+  \item I docenti dell'insegnamento, come documentazione dell'architettura e del metodo.
+\end{itemize}
+
+\section{Struttura del documento}
+
+\begin{description}[leftmargin=2.6cm, style=nextline]
+  \item[Capitolo~\ref{cap:obiettivi}] Obiettivo e domande di ricerca.
+  \item[Capitolo~\ref{cap:architettura}] Vista dei componenti: le tre versioni del sistema.
+  \item[Capitolo~\ref{cap:deployment}] Vista di deployment: ambiente locale e ambiente AWS.
+  \item[Capitolo~\ref{cap:guasti}] Modello dei guasti.
+  \item[Capitolo~\ref{cap:decisioni}] Decisioni architetturali, in formato ADR.
+  \item[Capitolo~\ref{cap:misura}] Protocollo di misura: definizioni e piano sperimentale.
+  \item[Capitolo~\ref{cap:previsioni}] Previsioni quantitative, scritte prima delle misure.
+  \item[Appendice~\ref{app:pianificazione}] Fasi e milestone del progetto.
+\end{description}
+
+\section{Riferimenti}
+
+\begin{itemize}
+  \item Materiale dell'insegnamento \insegnamento{} (slide su architetture software, metriche, project management, test di carico).
+  \item Piano di progetto del gruppo (\texttt{08\_PROGETTO\_DEFINITIVO.md}).
+  \item Repository: \url{https://github.com/terrecruis/kintsugi}.
+\end{itemize}

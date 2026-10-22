@@ -1,0 +1,24 @@
+\chapter{Modello dei guasti}
+\label{cap:guasti}
+
+I guasti sono iniettati sotto carico costante, uno per run, in un istante registrato. Nessun ripristino è manuale: si osserva quello automatico.
+
+\begin{table}[h]
+\centering
+\caption{Guasti iniettati.}
+\label{tab:guasti}
+\begin{tabularx}{\linewidth}{@{}llLl@{}}
+\toprule
+\textbf{ID} & \textbf{Guasto} & \textbf{Chi ripristina} & \textbf{Versioni} \\
+\midrule
+F1 & Spegnere 1 pod dell'API & Kubernetes riavvia il pod e lo esclude dal traffico finché non è pronto & V1, V2, V3 \\
+F2 & Spegnere tutti i worker & Kubernetes ricrea i pod; i messaggi attendono in coda & V3 \\
+F3 & Fermare il broker & Kubernetes riavvia il pod; i messaggi restano grazie a code durevoli e volume & V3 \\
+F4 & Fermare il database & Kubernetes riavvia il pod; dati salvi sul volume, l'applicazione ritenta & V1, V2, V3 \\
+F5 & Ritardo di rete verso il DB & Nessuno: è un degrado, si osservano timeout e riprove & V2, V3 \\
+F6 & \textit{(opz.)} Perdita di un nodo & Kubernetes sposta API e worker dopo un'attesa & V2, V3 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\todo{per ogni guasto: comando di iniezione, condizione di ripristino, MTTR atteso (capitolo~\ref{cap:previsioni})}

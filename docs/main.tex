@@ -1,0 +1,37 @@
+% Kintsugi -- Documento di architettura
+% Compilare con: make   (oppure: latexmk -pdf main.tex)
+
+\documentclass[11pt, a4paper, oneside, openany]{report}
+
+\input{config/preambolo}
+\input{config/metadati}
+\input{config/stile}
+
+\begin{document}
+
+% --- Parte iniziale ------------------------------------------------------
+\pagenumbering{roman}
+\input{frontmatter/frontespizio}
+\input{frontmatter/scheda-documento}
+\tableofcontents
+\listoffigures
+\listoftables
+\input{frontmatter/acronimi}
+
+% --- Corpo del documento -------------------------------------------------
+\cleardoublepage
+\pagenumbering{arabic}
+\input{chapters/01-introduzione}
+\input{chapters/02-obiettivi}
+\input{chapters/03-architettura}
+\input{chapters/04-deployment}
+\input{chapters/05-guasti}
+\input{chapters/06-decisioni}
+\input{chapters/07-misura}
+\input{chapters/08-previsioni}
+
+% --- Appendici -----------------------------------------------------------
+\appendix
+\input{appendices/a-pianificazione}
+
+\end{document}

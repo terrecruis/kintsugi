@@ -1,0 +1,57 @@
+\begin{titlepage}
+\newgeometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\centering
+\color{unina}
+
+% Logo ufficiale: se esiste figures/logo-unina.(pdf|png) viene inserito,
+% altrimenti il frontespizio resta solo testuale (vedi figures/README.md).
+\IfFileExists{figures/logo-unina.pdf}{\includegraphics[width=3.2cm]{figures/logo-unina.pdf}\par\vspace{0.6cm}}{%
+\IfFileExists{figures/logo-unina.png}{\includegraphics[width=3.2cm]{figures/logo-unina.png}\par\vspace{0.6cm}}{}}
+
+{\LARGE\scshape \universita\par}
+\vspace{0.35cm}
+{\color{unina}\rule{0.85\linewidth}{1.2pt}\par}
+\vspace{0.35cm}
+{\normalsize\color{black} \scuola\par}
+\vspace{0.1cm}
+{\normalsize\color{black} \dipartimento\par}
+\vspace{0.1cm}
+{\normalsize\color{black}\itshape \corso\par}
+
+\vspace{2.2cm}
+
+{\large\scshape\color{grigiotesto} \insegnamento\par}
+\vspace{0.9cm}
+{\fontsize{40}{44}\selectfont\bfseries \progetto\par}
+\vspace{0.4cm}
+{\Large \sottotitolo\par}
+\vspace{0.7cm}
+{\color{unina}\rule{0.35\linewidth}{0.8pt}\par}
+\vspace{0.4cm}
+{\large\color{black} \titolodoc\par}
+\vspace{0.15cm}
+{\normalsize\color{grigiotesto} Versione \versionedoc{} -- \statodoc\par}
+
+\vfill
+
+\color{black}
+\begin{minipage}[t]{0.47\linewidth}
+  \raggedright
+  {\small\scshape\color{unina} Docenti}\\[4pt]
+  \docenti
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.47\linewidth}
+  \raggedleft
+  {\small\scshape\color{unina} Studenti}\\[4pt]
+  \autoreuno{} \quad {\small\color{grigiotesto}Matr.\ \matricolauno}\\
+  \autoredue{} \quad {\small\color{grigiotesto}Matr.\ \matricoladue}
+\end{minipage}
+
+\vspace{1.6cm}
+{\color{unina}\rule{\linewidth}{0.6pt}\par}
+\vspace{0.25cm}
+{\normalsize Anno Accademico \annoaccademico\par}
+
+\restoregeometry
+\end{titlepage}

@@ -1,0 +1,88 @@
+\chapter{Architettura}
+\label{cap:architettura}
+
+Il servizio esiste in tre versioni. Sono \textbf{configurazioni dello stesso codice} e non applicazioni diverse: girano sullo stesso commit, così il confronto tra loro è equo (decisione D0012).
+
+\section{Componenti}
+
+\begin{table}[h]
+\centering
+\caption{Componenti del sistema.}
+\label{tab:componenti}
+\begin{tabularx}{\linewidth}{@{}llL@{}}
+\toprule
+\textbf{Componente} & \textbf{Con stato} & \textbf{Responsabilità} \\
+\midrule
+API        & no & Riceve l'ordine; in V1/V2 lo scrive nel database, in V3 lo pubblica in coda \\
+Worker     & no & (solo V3) Legge gli ordini dalla coda e li scrive nel database \\
+RabbitMQ   & sì & (solo V3) Coda degli ordini e coda dei messaggi falliti \\
+PostgreSQL & sì & Archivio degli ordini, con timestamp di ricezione e di commit \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{V1 -- sincrona, una istanza}
+
+L'API riceve l'ordine, lo elabora, lo scrive nel database e risponde (figura~\ref{fig:v1}).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\node[box] (client) {Client\\(JMeter)};
+\node[box, right=1.6cm of client] (api) {API\\$\times 1$};
+\node[box, right=1.6cm of api] (db) {PostgreSQL};
+\draw[freccia] (client) -- (api);
+\draw[freccia] (api) -- (db);
+\end{tikzpicture}
+\caption{V1: architettura sincrona con una sola istanza.}
+\label{fig:v1}
+\end{figure}
+
+\section{V2 -- sincrona, N repliche}
+
+Come V1, con più copie dell'API dietro un bilanciatore (figura~\ref{fig:v2}).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\node[box] (client) {Client};
+\node[box, right=1.3cm of client] (lb) {Service /\\Ingress};
+\node[box, right=1.3cm of lb] (api) {API\\$\times N$};
+\node[box, right=1.3cm of api] (db) {PostgreSQL};
+\draw[freccia] (client) -- (lb);
+\draw[freccia] (lb) -- (api);
+\draw[freccia] (api) -- (db);
+\end{tikzpicture}
+\caption{V2: architettura sincrona con N repliche dell'API.}
+\label{fig:v2}
+\end{figure}
+
+\section{V3 -- asincrona}
+
+L'API pubblica l'ordine in coda, attende la conferma del broker e risponde ``accettato''. I worker leggono dalla coda, scrivono nel database e solo dopo confermano il messaggio. I messaggi che non si riesce a elaborare finiscono nella coda dei falliti (figura~\ref{fig:v3}).
+
+\begin{figure}[h]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}
+\node[box] (client) {Client};
+\node[box, right=1.1cm of client] (lb) {Service /\\Ingress};
+\node[box, right=1.1cm of lb] (api) {API\\$\times N$};
+\node[box, right=1.6cm of api] (mq) {RabbitMQ};
+\node[box, right=1.1cm of mq] (worker) {Worker\\$\times M$};
+\node[box, right=1.1cm of worker] (db) {PostgreSQL};
+\node[box, below=0.9cm of mq, minimum width=2cm] (dlq) {Dead-letter};
+\draw[freccia] (client) -- (lb);
+\draw[freccia] (lb) -- (api);
+\draw[freccia] (api) -- node[above, font=\scriptsize] {publish} node[below, font=\scriptsize] {+ conferma} (mq);
+\draw[freccia] (mq) -- (worker);
+\draw[freccia] (worker) -- (db);
+\draw[freccia, dashed] (mq) -- (dlq);
+\end{tikzpicture}}
+\caption{V3: architettura asincrona con coda e worker.}
+\label{fig:v3}
+\end{figure}
+
+\section{Punti unici di guasto}
+
+Il database è un punto unico di guasto in tutte e tre le versioni; il broker lo è in V3. Entrambi sono singoli, con volume persistente, e sono dichiarati come tali. I guadagni di V2 sono quindi limitati dal database, e le previsioni (capitolo~\ref{cap:previsioni}) ne tengono conto.

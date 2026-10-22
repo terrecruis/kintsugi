@@ -1,0 +1,12 @@
+\begin{decisione}{D0013}{Risorse dell'host}{Proposta}{22/10/2026}
+
+\contesto
+Il piano assumeva un Mac da 16 GB. Il Mac di F.~Terrecuso ne ha 8, il computer di G.~Vellotti almeno 16. In locale cluster, generatore di carico e sistema operativo condividono la stessa memoria: se l'host va in swap, le misure riflettono l'host e non l'architettura.
+
+\scelta
+Si sviluppa su entrambe le macchine (Docker a 5 GB sul Mac da 8 GB). La misura della capacità, la verifica di M4 e la campagna di misura si fanno solo sulla macchina da almeno 16 GB, con Docker a circa 8 GB. Tutti i run di una campagna usano la stessa macchina.
+
+\conseguenze
+I numeri ottenuti sul Mac da 8 GB servono solo a verificare il funzionamento e non entrano nei risultati. Si aggiunge un criterio di validità dei run: nessuno swap dell'host durante il run (sezione~\ref{sec:validita}). La campagna dipende dalla disponibilità della macchina di G.~Vellotti.
+
+\end{decisione}

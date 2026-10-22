@@ -1,0 +1,40 @@
+\chapter*{Scheda del documento}
+\addcontentsline{toc}{chapter}{Scheda del documento}
+\markboth{Scheda del documento}{}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+\textbf{Progetto}      & \progetto{} -- \sottotitolo \\
+\textbf{Documento}     & \titolodoc \\
+\textbf{Versione}      & \versionedoc \\
+\textbf{Stato}         & \statodoc \\
+\textbf{Insegnamento}  & \insegnamento{}, A.A.\ \annoaccademico \\
+\textbf{Autori}        & \autoreuno, \autoredue \\
+\textbf{Repository}    & \url{https://github.com/terrecruis/kintsugi} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section*{Storico delle revisioni}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\linewidth}{@{}llL@{}}
+\toprule
+\textbf{Versione} & \textbf{Data} & \textbf{Modifiche} \\
+\midrule
+0.1 & 22/10/2026 & Prima bozza: obiettivi, architettura V1--V3, ambienti, modello dei guasti, definizioni di misura. \\
+0.2 & 22/10/2026 & Riorganizzazione in forma di documentazione: frontespizio, scheda, acronimi, capitoli, decisioni in formato ADR, appendice di pianificazione. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section*{Convenzioni}
+
+\begin{itemize}
+  \item Le parti \todo{in rosso} sono ancora da scrivere: il documento cresce insieme al progetto, milestone dopo milestone.
+  \item Le decisioni architetturali sono identificate da \textbf{D}\textit{nnnn} (capitolo~\ref{cap:decisioni}); i guasti da \textbf{F1}--\textbf{F6}; i carichi da \textbf{W1}--\textbf{W3}; le milestone da \textbf{M1}--\textbf{M7}.
+  \item Il diario delle operazioni, richiesto come consegna separata, è nel repository in \texttt{report/diario/}.
+\end{itemize}

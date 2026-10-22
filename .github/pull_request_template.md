@@ -8,7 +8,6 @@ Closes #
 
 ## Checklist
 
-- [ ] Voce nel diario di bordo, se è stata una sessione di lavoro
-- [ ] Decisione registrata in `docs/decisioni/`, se la modifica cambia una scelta architetturale o un parametro
-- [ ] `docs/parametri.md` aggiornato, se cambiano parametri di salute, timeout o repliche
-- [ ] Nessuna previsione di A6 modificata dopo aver visto delle misure
+- [ ] Breve riassunto nel diario di bordo (`report/diario/`)
+- [ ] Decisione registrata in `docs/sections/decisioni/`, se la modifica cambia una scelta architetturale o un parametro
+- [ ] Nessuna previsione modificata nel documento di architettura dopo aver visto delle misure

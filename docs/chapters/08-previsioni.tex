@@ -1,0 +1,37 @@
+\chapter{Previsioni quantitative}
+\label{cap:previsioni}
+
+Le previsioni si scrivono e si committano \textbf{prima} di qualsiasi misura (milestone M1): la data del commit ne è la prova. Dopo, non si modificano; eventuali correzioni si aggiungono in fondo, datate e motivate.
+
+\section{Metodo}
+
+Il downtime atteso per un guasto si ricava dai parametri configurati:
+\[
+  \text{Downtime} \approx \text{rilevamento} + \text{riavvio} + \text{prontezza} + \underbrace{\text{svuotamento dell'arretrato}}_{\text{solo V3}}
+\]
+
+La disponibilità di un componente è
+\[
+  A = \frac{\text{MTBF}}{\text{MTBF} + \text{MTTR}},
+\]
+dove l'MTBF è un'\emph{ipotesi dichiarata} (i guasti li iniettiamo noi) e l'MTTR si misura. Per componenti in serie $A_{tot} = A_1 \times A_2 \times \dots \times A_n$. Il risultato si esprime anche in ``nove''.
+
+\section{Previsioni per guasto}
+
+\begin{table}[h]
+\centering
+\caption{Previsioni per guasto e versione.}
+\label{tab:previsioni}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+\textbf{Guasto} & \textbf{Versione} & \textbf{Downtime previsto} & \textbf{Richieste fallite previste} \\
+\midrule
+F1 & V1 & \todo{} & \todo{} \\
+F1 & V2 & \todo{} & \todo{} \\
+F1 & V3 & \todo{} & \todo{} \\
+F4 & V1 & \todo{} & \todo{} \\
+F4 & V2 & \todo{} & \todo{} \\
+F4 & V3 & \todo{} & \todo{} \\
+\bottomrule
+\end{tabular}
+\end{table}

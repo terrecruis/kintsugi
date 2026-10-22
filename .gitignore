@@ -21,6 +21,18 @@ jmeter.log
 *.pem
 kubeconfig*
 
+# LaTeX
+docs/*.pdf
+docs/**/*.aux
+docs/*.log
+docs/*.out
+docs/*.toc
+docs/*.lof
+docs/*.lot
+docs/*.fls
+docs/*.fdb_latexmk
+docs/*.synctex.gz
+
 # Sistema
 .DS_Store
 .idea/

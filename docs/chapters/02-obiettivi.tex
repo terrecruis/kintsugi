@@ -1,0 +1,29 @@
+\chapter{Obiettivo e domande di ricerca}
+\label{cap:obiettivi}
+
+\section{Obiettivo}
+
+Misurare, con esperimenti ripetibili, come le scelte architetturali (repliche, coda asincrona, orchestrazione) cambiano l'impatto dei guasti, le prestazioni e il recupero di un servizio, e confrontare le misure con previsioni scritte \emph{prima} di misurare.
+
+\section{Domande di ricerca}
+
+\begin{table}[h]
+\centering
+\caption{Domande di ricerca.}
+\label{tab:rq}
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+\textbf{ID} & \textbf{Domanda} \\
+\midrule
+RQ1 & Quanto downtime e quante richieste fallite produce ogni guasto passando da 1 a N repliche? Quanto si discostano le misure dalle previsioni? Che disponibilità ne risulta con un MTBF ipotizzato? \\
+RQ2 & Sincrono contro asincrono, a parità di carico e timeout: come cambiano tempo end-to-end, disponibilità di completamento, ordini persi o duplicati e recupero, sotto picchi e guasti? \\
+RQ3 & Quanto ci mette il servizio a tornare effettivamente operativo dopo un guasto, e quanto dipende dai controlli di salute e dal tipo di componente (con o senza stato)? \\
+RQ4 & Con parametri allineati, i risultati locali si ripetono su AWS? Dove cambiano e perché? \\
+RQ5 & \textit{(opzionale)} Un autoscaling basato sulla lunghezza della coda assorbe meglio un picco? \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Fuori ambito}
+
+Portabilità e vendor lock-in; cluster di RabbitMQ e replica del database; multi-zona per i componenti con stato; multi-cloud; ottimizzazione del codice.
