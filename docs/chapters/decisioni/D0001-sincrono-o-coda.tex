@@ -1,0 +1,17 @@
+\begin{decisione}{D0001}{Sincrono o con coda: pro e contro}{Proposta}{23/10/2026}
+
+\contesto
+In V1 e V2 l'API salva l'ordine e solo dopo risponde: se il database è fermo, il cliente riceve subito un errore. In V3 l'API mette l'ordine in coda e risponde prima che sia salvato: il cliente non si accorge di un database fermo, ma ``ricevuto'' non vuol dire ancora ``salvato''.
+
+\scelta
+Le due modalità sono lo stesso programma, con un'impostazione diversa: \texttt{MODE=sync} oppure \texttt{MODE=async} (D0012).
+\begin{itemize}
+  \item \textbf{Sincrona:} l'API risponde ``creato'' (201) solo dopo che il database ha confermato il salvataggio.
+  \item \textbf{Con coda:} l'API risponde ``ricevuto'' (202) solo dopo che la coda ha confermato di aver conservato l'ordine (D0002). Mai prima.
+\end{itemize}
+In entrambi i casi, se il passo non riesce entro il tempo massimo, l'API risponde con un errore (503, D0008).
+
+\conseguenze
+Misuriamo due disponibilità diverse: quella di \emph{accettazione} (il cliente riceve una risposta positiva) e quella di \emph{completamento} (l'ordine è davvero nel database). Con la coda la prima migliora quando il database si ferma, ma il punto debole per accettare ordini diventa la coda stessa; il tempo di un ordine include anche l'attesa in coda. Nascono due rischi che la versione sincrona non ha, gli ordini persi e quelli doppi: li regolano D0002--D0004.
+
+\end{decisione}
