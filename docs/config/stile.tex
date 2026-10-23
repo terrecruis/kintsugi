@@ -64,6 +64,32 @@
   freccia/.style={-{Latex}, thick, color=unina!80!black},
 }
 
+% Diagrammi delle architetture: componenti, oggetti di Kubernetes, messaggi.
+\definecolor{accento}{RGB}{204,102,0}
+\tikzset{
+  pod/.style={draw=unina, thick, rounded corners=2pt, fill=white,
+              minimum width=1.7cm, minimum height=0.8cm, align=center, font=\small},
+  copie/.style={pod, double copy shadow={shadow xshift=3pt, shadow yshift=3pt,
+                draw=unina, fill=white}},
+  kube/.style={draw=unina, fill=unina, text=white, rounded corners=2pt,
+               minimum height=0.7cm, inner sep=3pt, align=center, font=\scriptsize\bfseries},
+  db/.style={cylinder, shape border rotate=90, aspect=0.22, draw=unina, thick,
+             fill=uninachiaro, minimum width=2cm, minimum height=1.3cm,
+             align=center, font=\small},
+  coda/.style={rectangle split, rectangle split horizontal, rectangle split parts=4,
+               rectangle split empty part width=1.4mm, draw=unina, thick,
+               fill=uninachiaro, minimum height=0.75cm},
+  toxi/.style={draw=grigiotesto, densely dashed, rounded corners=2pt, fill=white,
+               minimum height=0.7cm, inner sep=3pt, font=\scriptsize, text=grigiotesto},
+  guastato/.style={draw=accento, text=accento, fill=accento!8},
+  gruppo/.style={draw=unina!55, dashed, rounded corners=3pt, inner sep=7pt},
+  cluster/.style={draw=grigiotesto!60, rounded corners=4pt, inner sep=9pt, fill=black!2},
+  etichetta/.style={font=\scriptsize, text=grigiotesto, align=center},
+  risposta/.style={-{Latex}, thick, dashed, color=unina!80!black},
+  sonda/.style={-{Latex}, densely dotted, thick, color=grigiotesto},
+  vita/.style={draw=grigiotesto!70, dashed},
+}
+
 % --- Decisioni architetturali (ADR) ---------------------------------------
 % \begin{decisione}{ID}{Titolo}{Stato}{Data} ... \end{decisione}
 % Ogni decisione è una sezione del capitolo "Decisioni architetturali".

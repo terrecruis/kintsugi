@@ -29,6 +29,27 @@ Le cinque versioni usano lo stesso codice: cambia solo la configurazione. Ognuna
   \item[Worker] prendono gli ordini dalla coda e li salvano (solo V3 e V5).
 \end{description}
 
+\begin{center}
+\begin{tikzpicture}[every node/.append style={font=\scriptsize}, x=4.6cm, y=0.8cm]
+\node[pod, minimum width=1cm, minimum height=0.55cm] at (0,0) {};
+\node[anchor=west] at (0.15,0) {nostro programma};
+\node[kube, minimum width=1cm, minimum height=0.5cm] at (1,0) {};
+\node[anchor=west] at (1.15,0) {parte di Kubernetes};
+\node[db, minimum width=0.8cm, minimum height=0.6cm] at (2,0) {};
+\node[anchor=west] at (2.15,0) {dati salvati};
+\node[coda, minimum height=0.45cm, rectangle split parts=3] at (0,-1) {};
+\node[anchor=west] at (0.15,-1) {coda di messaggi};
+\draw[freccia] (0.9,-1) -- (1.1,-1);
+\node[anchor=west] at (1.15,-1) {richiesta};
+\draw[risposta] (1.9,-1) -- (2.1,-1);
+\node[anchor=west] at (2.15,-1) {risposta};
+\draw[sonda] (-0.1,-2) -- (0.1,-2);
+\node[anchor=west] at (0.15,-2) {controllo};
+\fill[accento] (1,-2) circle (2pt);
+\node[anchor=west] at (1.15,-2) {istante misurato};
+\end{tikzpicture}
+\end{center}
+
 \section{V1 -- una sola copia}
 
 L'API riceve l'ordine, lo salva e risponde. Se l'API si ferma, il servizio si ferma.
@@ -36,13 +57,23 @@ L'API riceve l'ordine, lo salva e risponde. Se l'API si ferma, il servizio si fe
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
-\node[box] (client) {Cliente};
-\node[box, right=1.6cm of client] (api) {API};
-\node[box, right=1.6cm of api] (db) {Database};
-\draw[freccia] (client) -- (api);
-\draw[freccia] (api) -- (db);
+\node[box, minimum width=1.8cm] (cl) at (0,0) {Cliente\\{\scriptsize JMeter}};
+\node[kube] (svc) at (3.4,0) {Service\\NodePort};
+\node[pod] (api) at (6.3,0) {API\\{\scriptsize 1 copia}};
+\node[db] (db) at (9.7,0) {PostgreSQL};
+\node[etichetta, below=1mm of db] (n1) {worker-1};
+\node[kube] (kl) at (6.3,2.0) {kubelet};
+\draw[freccia] (cl) -- node[etichetta, above] {POST\\/ordini} (svc);
+\draw[freccia] (svc) -- (api);
+\draw[freccia] (api) -- node[etichetta, above] {INSERT} (db);
+\draw[sonda] ([xshift=-4mm]kl.south) -- node[etichetta, left] {viva?\\ogni 2 s} ([xshift=-4mm]api.north);
+\draw[sonda] ([xshift=4mm]kl.south) -- node[etichetta, right] {pronta?\\ogni 1 s} ([xshift=4mm]api.north);
+\begin{scope}[on background layer]
+\node[cluster, fit=(svc)(kl)(db)(n1), label={[etichetta, anchor=north east]south east:cluster Kubernetes}] {};
+\end{scope}
+\draw[risposta] (api.south) -- ++(0,-1.5) -| node[etichetta, pos=0.25, below] {201 dopo il salvataggio $\cdot$ 503 entro 1,5 s} (cl.south);
 \end{tikzpicture}
-\caption{V1.}
+\caption{V1: un'unica copia dell'API, sorvegliata da Kubernetes.}
 \label{fig:v1}
 \end{figure}
 
@@ -53,15 +84,29 @@ Come V1, ma con tre copie dell'API e un bilanciatore che smista le richieste. Se
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
-\node[box] (client) {Cliente};
-\node[box, right=1.3cm of client] (lb) {Bilanciatore};
-\node[box, right=1.3cm of lb] (api) {API $\times 3$};
-\node[box, right=1.3cm of api] (db) {Database};
-\draw[freccia] (client) -- (lb);
-\draw[freccia] (lb) -- (api);
-\draw[freccia] (api) -- (db);
+\node[box, minimum width=1.8cm] (cl) at (0,0) {Cliente\\{\scriptsize JMeter}};
+\node[kube] (svc) at (3.4,0) {Service\\NodePort};
+\node[pod] (a1) at (6.1,1.15) {API};
+\node[pod] (a2) at (6.1,0) {API};
+\node[pod, guastato] (a3) at (6.1,-1.15) {API spenta\\{\scriptsize esclusa}};
+\node[toxi] (tx) at (8.9,0) {Toxiproxy};
+\node[etichetta, below=1mm of tx] {ritardo\\per F5};
+\node[db] (db) at (12.0,0) {PostgreSQL};
+\node[etichetta, below=1mm of db] (n1) {worker-1};
+\node[etichetta, above=2mm of a1] (dl) {3 copie};
+\draw[freccia] (cl) -- node[etichetta, above] {POST\\/ordini} (svc);
+\draw[freccia] (svc.east) -- (a1.west);
+\draw[freccia] (svc.east) -- (a2.west);
+\draw[sonda, color=accento] (svc.east) -- (a3.west);
+\draw[freccia] (a1.east) -- (tx.west);
+\draw[freccia] (a2.east) -- (tx.west);
+\draw[freccia] (tx) -- node[etichetta, above] {INSERT} (db);
+\begin{scope}[on background layer]
+\node[gruppo, fit=(a1)(a3)(dl)] {};
+\node[cluster, fit=(svc)(a1)(a3)(dl)(db)(n1), label={[etichetta, anchor=north east]south east:cluster Kubernetes}] {};
+\end{scope}
 \end{tikzpicture}
-\caption{V2.}
+\caption{V2: il Service manda gli ordini solo alle copie pronte; una copia spenta resta esclusa finché non torna pronta.}
 \label{fig:v2}
 \end{figure}
 
@@ -71,21 +116,32 @@ L'API mette l'ordine in coda e risponde subito ``ricevuto''. I worker lo salvano
 
 \begin{figure}[htbp]
 \centering
-\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}
-\node[box] (client) {Cliente};
-\node[box, right=1.1cm of client] (lb) {Bilanciatore};
-\node[box, right=1.1cm of lb] (api) {API $\times 3$};
-\node[box, right=1.1cm of api] (mq) {Coda};
-\node[box, right=1.1cm of mq] (worker) {Worker $\times 3$};
-\node[box, right=1.1cm of worker] (db) {Database};
-\draw[freccia] (client) -- (lb);
-\draw[freccia] (lb) -- (api);
-\draw[freccia] (api) -- (mq);
-\draw[freccia] (mq) -- (worker);
-\draw[freccia] (worker) -- (db);
-\end{tikzpicture}}
-\caption{V3.}
+\node[box, minimum width=1.8cm] (cl) at (0,0) {Cliente\\{\scriptsize JMeter}};
+\node[kube] (svc) at (3.4,0) {Service\\NodePort};
+\node[copie] (api) at (6.0,0) {API};
+\node[coda, label={[etichetta]above:RabbitMQ (worker-1)}] (q) at (9.8,0) {};
+\node[coda, rectangle split parts=3, draw=accento, fill=accento!10,
+      label={[etichetta]above:coda dei falliti}] (dlq) at (13.3,0) {};
+\node[copie] (wk) at (9.8,-3.0) {Worker};
+\node[toxi] (tx) at (6.6,-3.0) {Toxiproxy};
+\node[db] (db) at (3.4,-3.0) {PostgreSQL};
+\node[etichetta, below=1mm of db] (n2) {worker-1};
+\draw[freccia] (cl) -- node[etichetta, above] {POST\\/ordini} (svc);
+\draw[freccia] (svc) -- (api);
+\draw[freccia] ([yshift=1mm]api.east) -- node[etichetta, above] {pubblica} ([yshift=1mm]q.west);
+\draw[risposta] ([yshift=-2mm]q.west) -- node[etichetta, below] {conferma} ([yshift=-2mm]api.east);
+\draw[freccia] ([xshift=3mm]q.south) -- node[etichetta, right] {1 ordine\\alla volta} ([xshift=3mm]wk.north);
+\draw[risposta] ([xshift=-3mm]wk.north) -- node[etichetta, left] {ack dopo\\il salvataggio} ([xshift=-3mm]q.south);
+\draw[sonda, color=accento] (q) -- node[etichetta, below, pos=0.42, text=accento] {dopo 120 s\\di riprove} (dlq);
+\draw[freccia] (wk) -- (tx);
+\draw[freccia] (tx) -- node[etichetta, above] {INSERT} (db);
+\begin{scope}[on background layer]
+\node[cluster, fit=(svc)(api)(q)(dlq)(wk)(db)(n2), label={[etichetta, anchor=north east]south east:cluster Kubernetes}] {};
+\end{scope}
+\draw[risposta] (api.north) -- ++(0,1.6) -| node[etichetta, pos=0.25, above] {202 dopo la conferma della coda} (cl.north);
+\end{tikzpicture}
+\caption{V3: l'ordine passa dalla coda; il worker lo conferma alla coda solo dopo averlo salvato.}
 \label{fig:v3}
 \end{figure}
 
@@ -97,19 +153,27 @@ Proviamo due modalità: nella prima la riserva si aggiorna \emph{subito dopo} (p
 
 \begin{figure}[htbp]
 \centering
-\resizebox{0.85\linewidth}{!}{%
 \begin{tikzpicture}
-\node[box] (client) {Cliente};
-\node[box, right=1.1cm of client] (lb) {Bilanciatore};
-\node[box, right=1.1cm of lb] (api) {API $\times 3$};
-\node[box, right=1.1cm of api] (prim) {Database\\principale};
-\node[box, below=1cm of prim] (stby) {Database\\di riserva};
-\draw[freccia] (client) -- (lb);
-\draw[freccia] (lb) -- (api);
-\draw[freccia] (api) -- (prim);
-\draw[freccia, dashed] (prim) -- node[right, font=\scriptsize] {copia} (stby);
-\end{tikzpicture}}
-\caption{V4.}
+\node[box, minimum width=1.8cm] (cl) at (0,0) {Cliente\\{\scriptsize JMeter}};
+\node[kube] (svc) at (3.2,0) {Service\\NodePort};
+\node[copie] (api) at (5.6,0) {API};
+\node[kube] (rw) at (9.0,0) {Service\\scrittura};
+\node[db] (pr) at (12.6,1.0) {Principale};
+\node[db] (st) at (12.6,-2.2) {Riserva};
+\node[kube] (op) at (9.0,-2.2) {Operatore\\CNPG};
+\draw[freccia] (cl) -- node[etichetta, above] {POST\\/ordini} (svc);
+\draw[freccia] (svc) -- (api);
+\draw[freccia] (api) -- node[etichetta, above] {INSERT} (rw);
+\draw[freccia] (rw.east) -- (pr.west);
+\draw[freccia, double, -{Latex}] (pr.south) -- node[etichetta, left, xshift=-1mm] {copia continua\\V4a: subito dopo\\V4s: insieme} (st.north);
+\draw[sonda] (op) -- node[etichetta, below] {sorveglia\\e promuove} (st);
+\draw[sonda] (op) -- node[etichetta, left] {sposta\\l'indirizzo} (rw);
+\begin{scope}[on background layer]
+\node[gruppo, fit=(pr), label={[etichetta]above:worker-1}] {};
+\node[gruppo, fit=(st), label={[etichetta]below:worker-2}] {};
+\end{scope}
+\end{tikzpicture}
+\caption{V4: l'API scrive sempre allo stesso indirizzo; se il principale cade, l'operatore promuove la riserva e sposta l'indirizzo su di lei.}
 \label{fig:v4}
 \end{figure}
 
@@ -119,26 +183,81 @@ Come V3, ma il numero di worker non è fisso: quando la coda si allunga ne vengo
 
 \begin{figure}[htbp]
 \centering
-\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}
-\node[box] (client) {Cliente};
-\node[box, right=1.1cm of client] (lb) {Bilanciatore};
-\node[box, right=1.1cm of lb] (api) {API $\times 3$};
-\node[box, right=1.1cm of api] (mq) {Coda};
-\node[box, right=1.4cm of mq] (worker) {Worker\\da 1 a 10};
-\node[box, right=1.1cm of worker] (db) {Database};
-\coordinate (mid) at ($(mq)!0.5!(worker)$);
-\node[box, below=1cm of mid, dashed] (keda) {Regolatore};
-\draw[freccia] (client) -- (lb);
-\draw[freccia] (lb) -- (api);
-\draw[freccia] (api) -- (mq);
-\draw[freccia] (mq) -- (worker);
-\draw[freccia] (worker) -- (db);
-\draw[freccia, dashed] (mq) -- node[left, font=\scriptsize] {quanto è lunga?} (keda);
-\draw[freccia, dashed] (keda) -- node[right, font=\scriptsize] {aggiungi/togli} (worker);
-\end{tikzpicture}}
-\caption{V5.}
+\node[box, minimum width=1.8cm] (cl) at (0,0) {Cliente\\{\scriptsize JMeter}};
+\node[kube] (svc) at (3.4,0) {Service\\NodePort};
+\node[copie] (api) at (6.0,0) {API};
+\node[coda, label={[etichetta]above:RabbitMQ}] (q) at (9.8,0) {};
+\node[copie] (wk) at (9.8,-3.0) {Worker\\{\scriptsize da 1 a 10}};
+\node[kube] (keda) at (13.2,-1.5) {KEDA};
+\node[toxi] (tx) at (6.6,-3.0) {Toxiproxy};
+\node[db] (db) at (3.4,-3.0) {PostgreSQL};
+\draw[freccia] (cl) -- node[etichetta, above] {POST\\/ordini} (svc);
+\draw[freccia] (svc) -- (api);
+\draw[freccia] (api) -- node[etichetta, above] {pubblica} (q);
+\draw[freccia] (q) -- (wk);
+\draw[sonda] (q.east) -| node[etichetta, pos=0.25, above] {quanti ordini\\in attesa?} (keda.north);
+\draw[sonda] (keda.south) |- node[etichetta, pos=0.75, below] {aggiunge o\\toglie worker} (wk.east);
+\draw[freccia] (wk) -- (tx);
+\draw[freccia] (tx) -- node[etichetta, above] {INSERT} (db);
+\begin{scope}[on background layer]
+\node[cluster, fit=(svc)(api)(q)(keda)(wk)(db), label={[etichetta, anchor=north east]south east:cluster Kubernetes}] {};
+\end{scope}
+\draw[risposta] (api.north) -- ++(0,1.6) -| node[etichetta, pos=0.25, above] {202} (cl.north);
+\end{tikzpicture}
+\caption{V5: come V3 (coda dei falliti compresa), con KEDA che regola il numero di worker in base alla coda.}
 \label{fig:v5}
+\end{figure}
+
+\section{Il percorso di un ordine}
+
+La figura~\ref{fig:sequenza} segue lo stesso ordine con e senza coda. In arancione i due istanti che misuriamo (D0005).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[y=0.6cm, every node/.append style={font=\scriptsize}]
+\node[font=\small\bfseries, text=unina, anchor=west] at (-1.2,1.4) {Sincrono (V1, V2, V4)};
+\foreach \x/\n in {0/Cliente, 2.8/API, 5.6/Database} {
+  \node[pod, minimum width=1.5cm, minimum height=0.6cm, font=\scriptsize] at (\x,0) {\n};
+  \draw[vita] (\x,-0.6) -- (\x,-5.4);
+}
+\draw[freccia] (0,-1.5) -- node[above] {POST /ordini} (2.8,-1.5);
+\draw[freccia] (2.8,-2.5) -- node[above] {INSERT} (5.6,-2.5);
+\draw[risposta] (5.6,-3.5) -- node[above] {salvato} (2.8,-3.5);
+\draw[risposta] (2.8,-4.5) -- node[above] {201} (0,-4.5);
+\fill[accento] (2.8,-1.5) circle (2pt);
+\node[text=accento, anchor=north east] at (2.75,-1.6) {ricezione};
+\fill[accento] (5.6,-2.9) circle (2pt);
+\node[text=accento, anchor=west] at (5.65,-2.9) {scrittura};
+\draw[decorate, decoration={brace, amplitude=4pt}, thick, grigiotesto] (-0.25,-4.5) -- node[left, xshift=-4pt, etichetta] {il cliente\\aspetta} (-0.25,-1.5);
+\draw[decorate, decoration={brace, amplitude=4pt}, thick, accento] (7.0,-1.5) -- node[right, xshift=4pt, text=accento, align=left] {tempo\\dell'ordine} (7.0,-2.9);
+\end{tikzpicture}
+
+\vspace{0.6cm}
+
+\begin{tikzpicture}[y=0.6cm, every node/.append style={font=\scriptsize}]
+\node[font=\small\bfseries, text=unina, anchor=west] at (-1.2,1.4) {Con coda (V3, V5)};
+\foreach \x/\n in {0/Cliente, 2.1/API, 4.2/Coda, 6.3/Worker, 8.4/Database} {
+  \node[pod, minimum width=1.4cm, minimum height=0.6cm, font=\scriptsize] at (\x,0) {\n};
+  \draw[vita] (\x,-0.6) -- (\x,-9.4);
+}
+\draw[freccia] (0,-1.5) -- node[above] {POST} (2.1,-1.5);
+\draw[freccia] (2.1,-2.5) -- node[above] {pubblica} (4.2,-2.5);
+\draw[risposta] (4.2,-3.5) -- node[above] {conferma} (2.1,-3.5);
+\draw[risposta] (2.1,-4.5) -- node[above] {202} (0,-4.5);
+\draw[freccia] (4.2,-5.5) -- node[above] {consegna} (6.3,-5.5);
+\draw[freccia] (6.3,-6.5) -- node[above] {INSERT} (8.4,-6.5);
+\draw[risposta] (8.4,-7.5) -- node[above] {salvato} (6.3,-7.5);
+\draw[risposta] (6.3,-8.5) -- node[above] {ack} (4.2,-8.5);
+\fill[accento] (2.1,-1.5) circle (2pt);
+\node[text=accento, anchor=north east] at (2.05,-1.6) {ricezione};
+\fill[accento] (8.4,-6.9) circle (2pt);
+\node[text=accento, anchor=west] at (8.45,-6.9) {scrittura};
+\draw[decorate, decoration={brace, amplitude=4pt}, thick, grigiotesto] (-0.25,-4.5) -- node[left, xshift=-4pt, etichetta] {il cliente\\aspetta} (-0.25,-1.5);
+\draw[decorate, decoration={brace, amplitude=4pt}, thick, accento] (9.8,-1.5) -- node[right, xshift=4pt, text=accento, align=left] {tempo\\dell'ordine} (9.8,-6.9);
+\end{tikzpicture}
+\caption{Con la coda il cliente aspetta meno, ma l'ordine è salvato più tardi.}
+\label{fig:sequenza}
 \end{figure}
 
 \section{I punti deboli di ogni versione}
