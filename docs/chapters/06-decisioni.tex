@@ -11,10 +11,10 @@ Ogni scelta importante è scritta in una scheda: il problema, cosa abbiamo decis
 \toprule
 \textbf{ID} & \textbf{Decisione} & \textbf{Stato} \\
 \midrule
-D0001 & Sincrono o con coda: pro e contro & da scrivere \\
-D0002 & Come configurare la coda & da scrivere \\
-D0003 & Come i worker ritentano quando il database è fermo & da scrivere \\
-D0004 & Come riconoscere e contare gli ordini doppi & da scrivere \\
+D0001 & Sincrono o con coda: pro e contro & proposta \\
+D0002 & Come configurare la coda & proposta \\
+D0003 & Come i worker ritentano quando il database è fermo & proposta \\
+D0004 & Come riconoscere e contare gli ordini doppi & proposta \\
 D0005 & Come misurare il tempo di ogni ordine & proposta \\
 D0006 & Dove stanno i dati & da scrivere \\
 D0007 & Come Kubernetes controlla che i servizi stiano bene & proposta \\
@@ -47,12 +47,17 @@ Copie dell'API (V2--V5) & 3 \\
 Worker (V3) / worker in V5 & 3 / da 1 a 10 \\
 Il cliente rinuncia dopo & 2 s \\
 L'API rinuncia dopo & 1,5 s \\
+Il worker ritenta: attesa tra i tentativi / per almeno & da 0,5 a 10 s / 120 s \\
 Kubernetes controlla se l'API è pronta & ogni 1 s \\
 Kubernetes controlla se l'API è viva & ogni 2 s \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\input{chapters/decisioni/D0001-sincrono-o-coda}
+\input{chapters/decisioni/D0002-configurazione-coda}
+\input{chapters/decisioni/D0003-riprova-worker}
+\input{chapters/decisioni/D0004-ordini-doppi}
 \input{chapters/decisioni/D0005-timestamp}
 \input{chapters/decisioni/D0007-controlli-salute}
 \input{chapters/decisioni/D0008-timeout-deadline}
