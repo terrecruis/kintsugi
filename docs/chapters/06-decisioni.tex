@@ -23,11 +23,11 @@ D0009 & Strumenti e regione per AWS & da scrivere \\
 D0010 & Connessioni al database & da scrivere \\
 D0011 & Linguaggio dell'applicazione & da scrivere \\
 D0012 & Un solo codice per tutte le versioni & accettata \\
-D0013 & Su quale computer si misura & proposta \\
+D0013 & Su quale computer si misura & accettata \\
 D0014 & Aggiungere V4 (database di riserva) & accettata \\
 D0015 & Aggiungere V5 (lavoratori automatici) & accettata \\
-D0016 & Come provocare i guasti & proposta \\
-D0017 & Come esprimere la disponibilità & proposta \\
+D0016 & Come provocare i guasti & accettata \\
+D0017 & Come esprimere la disponibilità & accettata \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -39,7 +39,7 @@ D0017 & Come esprimere la disponibilità & proposta \\
 \centering
 \caption{Valori proposti, uguali per tutte le versioni.}
 \label{tab:parametri}
-\begin{tabular}{@{}ll@{}}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.5\linewidth}L@{}}
 \toprule
 \textbf{Cosa} & \textbf{Valore} \\
 \midrule
@@ -48,11 +48,17 @@ Worker (V3) / worker in V5 & 3 / da 1 a 10 \\
 Il cliente rinuncia dopo & 2 s \\
 L'API rinuncia dopo & 1,5 s \\
 Il worker ritenta: attesa tra i tentativi / per almeno & da 0,5 a 10 s / 120 s \\
-Kubernetes controlla se l'API è pronta & ogni 1 s \\
-Kubernetes controlla se l'API è viva & ogni 2 s \\
+Sonde, configurazione \emph{veloce}: API pronta / viva & ogni 1 s / ogni 2 s; guasto dichiarato dopo 3 controlli falliti di fila \\
+Sonde, configurazione \emph{standard} (valori predefiniti di Kubernetes): API pronta / viva & ogni 10 s / ogni 10 s; guasto dichiarato dopo 3 controlli falliti di fila \\
+Tempo previsto per accorgersi di un blocco (F7): veloce / standard & circa 3--6 s / circa 30 s \\
+KEDA: ogni quanto controlla la coda / oltre quanti ordini aggiunge worker / attesa prima di toglierli & \todo{valori da fissare} \\
+Riferimenti per V5 (carico W2) & V3 con 1 worker fissi e V3 con 10 worker fissi \\
+Costo di una versione in locale & worker-secondi: la somma, nel tempo, del numero di worker accesi \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
+
+I valori della configurazione \emph{standard} sono quelli predefiniti di Kubernetes (controllo ogni 10 secondi, guasto dopo 3 fallimenti di fila): vanno verificati sulla versione 1.37. Per la configurazione \emph{veloce} i 3 fallimenti di fila non erano stati fissati prima: sono scritti perché le due configurazioni siano confrontabili e vanno confermati.
 
 \input{chapters/decisioni/D0001-sincrono-o-coda}
 \input{chapters/decisioni/D0002-configurazione-coda}

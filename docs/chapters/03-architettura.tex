@@ -181,6 +181,8 @@ Proviamo due modalità: nella prima la riserva si aggiorna \emph{subito dopo} (p
 
 Come V3, ma il numero di worker non è fisso: quando la coda si allunga ne vengono aggiunti, quando si svuota vengono tolti.
 
+V5 parte con 1 worker mentre V3 ne ha 3, quindi confrontarle direttamente non dice se il vantaggio (o lo svantaggio) viene dalla scalatura automatica o dal numero di partenza. Per questo V5 si misura anche contro due riferimenti: \textbf{V3 con 1 worker fissi} (economica ma lenta) e \textbf{V3 con 10 worker fissi} (veloce ma costosa). V5 dovrebbe stare in mezzo. Il costo si misura in \textbf{worker-secondi}: la somma, nel tempo, del numero di worker accesi.
+
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}

@@ -3,7 +3,7 @@
 # 🏺 Kintsugi
 ### Laboratorio di affidabilità e asincronia su Kubernetes e AWS
 
-*Cinque architetture, sette guasti, 225 esperimenti: come ridondanza, code asincrone, replica dei dati ed elasticità cambiano l'impatto dei guasti su un servizio distribuito*
+*Cinque architetture, sette guasti, 245 esperimenti: come ridondanza, code asincrone, replica dei dati ed elasticità cambiano l'impatto dei guasti su un servizio distribuito*
 
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-kind%20%7C%20EKS-326CE5?logo=kubernetes&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-EKS%20%2B%20ALB-FF9900?logo=amazonwebservices&logoColor=white)
@@ -60,7 +60,7 @@ V5  asincrona elastica
 | **V2** | N repliche dell'API dietro un bilanciatore | RQ1, RQ2 |
 | **V3** | L'API pubblica su RabbitMQ; i worker scrivono nel database | RQ2 |
 | **V4** | PostgreSQL primario + standby con failover (CloudNativePG) | RQ4 |
-| **V5** | Worker scalati da KEDA sulla lunghezza della coda | RQ5 |
+| **V5** | Worker scalati da KEDA sulla lunghezza della coda (confrontata anche con V3 a 1 e a 10 worker fissi) | RQ5 |
 
 ```
                   ┌─────────────────────┐
@@ -106,7 +106,7 @@ Un solo programma Python (FastAPI) e una sola immagine Docker, che parte come AP
 
 - **Iniezione realistica:** `SIGKILL` e `SIGSTOP` inviati dal nodo, non `kubectl delete pod` (che è una terminazione ordinata).
 - **Carico a modello aperto** (W1 costante, W2 picco, W3 sovraccarico), per evitare la *coordinated omission*.
-- **225 run** in ordine casuale (circa 21 ore di macchina), con reset verificato prima di ogni run.
+- **245 run** in ordine casuale (circa 23 ore di macchina), con reset verificato prima di ogni run.
 
 | Ambiente | Infrastruttura |
 |---|---|
@@ -183,7 +183,7 @@ Genera `docs/main.pdf`: architettura, decisioni (ADR), modello dei guasti, proto
 | **M2** | 11/11/2026 | Applicazione minima V1–V3 |
 | **M3** | 25/11/2026 | V1–V3 su kind a 3 nodi; primo guasto misurato |
 | **M4** | 09/12/2026 | Banco di prova completo; failover di V4 e scalatura di V5 verificati |
-| **M5** | 16/12/2026 | Campagna di misura locale (225 run) |
+| **M5** | 16/12/2026 | Campagna di misura locale (245 run) |
 | **M6** | 30/12/2026 | Sessioni su AWS |
 | **M7** | 13/01/2027 | Consegna |
 

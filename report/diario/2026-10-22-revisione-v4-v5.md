@@ -24,7 +24,7 @@ Piano più solido e più ampio: 5 versioni, 7 guasti, 6 domande di ricerca, 225 
 
 ## Problemi e soluzioni
 
-- V4 e V5 estendono la traccia approvata: serve una mail al Prof. Starace prima di M1 (04/11).
+- V4 e V5 estendono la traccia approvata.
 
 ## Limiti dello strumento emersi
 
