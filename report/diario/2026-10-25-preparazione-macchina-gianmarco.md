@@ -1,6 +1,6 @@
 # 2026-10-25 — Preparazione della macchina di misura e problema sul piazzamento nel cluster
 
-**Chi:** Gianmarco · **Fase:** F0/F1 · **Durata:** 1 h · **Issue:** #7, #13
+**Chi:** Gianmarco · **Fase:** F0/F1 · **Durata:** 1 h · **Issue:** #7, #14
 
 ## Cosa abbiamo fatto
 
@@ -18,7 +18,7 @@ Preparato il MacBook Air M5 da 16 GB, che D0013 indica come unica macchina per l
 
 Verificato prima che le porte 8080 e 3000 fossero libere, creato il cluster da `deploy/k8s/kind-cluster.yaml` e controllato nodi e pod di sistema.
 
-Analizzato il file `kind-cluster.yaml` e i suoi commenti e individuato un problema di progetto, segnalato nell'issue #13.
+Analizzato il file `kind-cluster.yaml` e i suoi commenti e individuato un problema di progetto, segnalato nell'issue #14.
 
 ## Perché
 
@@ -50,9 +50,11 @@ gh issue create -R terrecruis/kintsugi --title "Cluster: guasto di macchina non 
 - Porte esposte solo su 127.0.0.1: 8080 → 30080 (API) e 3000 → 30030 (Grafana).
 - Tutti i 13 pod di sistema `Running`, 0 riavvii.
 - Memoria a cluster vuoto: control plane 681,9 MiB, worker 151,8 MiB, worker2 145 MiB, circa 979 MiB in tutto. Restano circa 6,8 GiB per i carichi.
-- Aperta l'issue #13 (milestone M1, collegata a #9) con il problema del piazzamento e le due proposte; da decidere insieme e scrivere in D0006.
+- Aperta l'issue #14 (milestone M1, collegata a #9) con il problema del piazzamento e le due proposte; da decidere insieme e scrivere in D0006.
 
 ## Problemi e soluzioni
+
+- La prima issue (#13) è stata aperta dall'account GitHub sbagliato (`gh` era collegato a un altro account, senza permessi di scrittura, quindi senza etichette né milestone): chiusa e ricreata come #14 dall'account corretto. Prima di ogni operazione con `gh` si controlla l'account attivo (`gh api user --jq .login`).
 
 - Il problema del piazzamento resta aperto: l'etichetta `calcolo` di `worker-2` contraddice la presenza dello standby di V4, e le regole di piazzamento non sono ancora scritte. Proposte scritte nell'issue.
 
