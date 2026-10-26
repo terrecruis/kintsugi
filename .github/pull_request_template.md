@@ -9,5 +9,5 @@ Closes #
 ## Checklist
 
 - [ ] Breve riassunto nel diario di bordo (`report/diario/`)
-- [ ] Decisione registrata in `docs/sections/decisioni/`, se la modifica cambia una scelta architetturale o un parametro
+- [ ] Decisione registrata in `docs/chapters/decisioni/`, se la modifica cambia una scelta architetturale o un parametro
 - [ ] Nessuna previsione modificata nel documento di architettura dopo aver visto delle misure

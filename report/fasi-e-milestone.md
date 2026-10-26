@@ -112,7 +112,13 @@ Progettare e scrivere le previsioni (M1) → costruire l'app (M2) → portarla s
 
 ## Ripartizione del lavoro
 
-| | Persona A | Persona B |
-|---|---|---|
-| **Responsabile di** | Kubernetes locale e AWS: manifest, cluster, infrastruttura come codice, sessioni AWS | Applicazione, misura (harness, timestamp, validità dei run), osservabilità, analisi statistica |
-| **Insieme** | Architettura e protocollo (F1), basi di Kubernetes (F3), esecuzione e analisi (F5, F7), report (F8) | |
+Uno dei due svolge l'attività, l'altro la legge e la approva. **Nulla viene accettato senza l'approvazione dell'altro.**
+
+| Cosa | Chi lo fa | Chi lo legge e approva | Quando è accettato |
+|---|---|---|---|
+| Attività (issue) | chi la prende | l'altro | quando l'altro ha approvato il risultato |
+| Modifiche al repository (pull request) | l'autore | l'altro | dopo l'approvazione dell'altro; nessuno unisce una propria pull request senza di essa |
+| Decisioni architetturali (ADR) | chi le propone | l'altro | quando lo stato passa ad «accettata» dopo la lettura e l'approvazione dell'altro |
+| Previsioni e valori dei parametri | chi li scrive | l'altro | prima di eseguire i run, con data e approvazione |
+| Esecuzione e analisi dei run (F5, F7) | insieme | entrambi | quando entrambi hanno letto i risultati |
+| Report e diario | chi scrive la sezione | l'altro | dopo la lettura dell'altro |
