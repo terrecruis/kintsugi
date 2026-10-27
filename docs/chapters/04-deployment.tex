@@ -1,52 +1,98 @@
-\chapter{Dove gira il sistema}
+\chapter{Ambienti di esecuzione}
 \label{cap:deployment}
 
-\section{Ambiente A -- sul nostro computer}
+Gli esperimenti si svolgono in due ambienti: un cluster locale, dove si esegue l'intera campagna, e un cluster su AWS, dove se ne ripete una parte per rispondere a RQ6.
 
-Usiamo \textbf{Kubernetes}, un programma che avvia i servizi, li tiene d'occhio e li riavvia da solo quando si rompono. Lo facciamo girare sul computer con \textbf{kind}, che simula tre macchine dentro Docker:
+\section{Ambiente A -- cluster locale}
+
+Kubernetes avvia i componenti, ne controlla lo stato con le sonde e li riavvia quando si guastano. In locale gira su \textbf{kind}, che simula ogni nodo del cluster con un container Docker. Il file \texttt{deploy/k8s/kind-cluster.yaml} descrive i tre nodi, così chiunque può ricreare un cluster identico:
 
 \begin{description}
-  \item[control-plane] il ``cervello'' di Kubernetes e la porta d'ingresso; non lo rompiamo mai.
-  \item[worker-1] ospita database e coda.
-  \item[worker-2] ospita le altre copie; è la macchina che spegniamo in uno dei test.
+  \item[\texttt{kintsugi-control-plane}] ospita il control plane ed è il punto d'ingresso: le porte 8080 (API) e 3000 (Grafana) del computer, esposte solo su \texttt{127.0.0.1}, arrivano alle NodePort 30080 e 30030. Non viene mai guastato.
+  \item[\texttt{kintsugi-worker}] etichetta \texttt{kintsugi/ruolo: dati}: ospita i componenti con stato, cioè database e broker, con i dischi locali del nodo.
+  \item[\texttt{kintsugi-worker2}] etichetta \texttt{kintsugi/ruolo: calcolo}: ospita i componenti senza stato (API e worker). È il nodo che si spegne nel guasto F6.
 \end{description}
+
+Tutti i nodi usano l'immagine \texttt{kindest/node:v1.37.0}, quindi Kubernetes 1.37.
 
 \begin{figure}[htbp]
 \centering
-\resizebox{0.9\linewidth}{!}{%
-\begin{tikzpicture}[node distance=0.35cm]
-\node[box] (pg) {Database};
-\node[box, below=of pg] (mq) {Coda};
-\node[box, below=of mq] (a1) {API, worker};
-\node[draw=unina, dashed, rounded corners, fit=(pg)(mq)(a1), inner sep=8pt,
-      label={[font=\small\color{unina}]above:worker-1}] (w1) {};
-\node[box, right=2.2cm of pg] (a2) {API, worker};
-\node[draw=unina, dashed, rounded corners, fit=(a2), inner sep=8pt,
-      label={[font=\small\color{unina}]above:worker-2}] (w2) {};
-\node[box, left=2.4cm of pg] (cp) {Cervello di\\Kubernetes};
-\node[draw=unina, dashed, rounded corners, fit=(cp), inner sep=8pt,
-      label={[font=\small\color{unina}]above:control-plane}] (c) {};
-\node[box, below=2.2cm of cp] (jm) {Generatore\\di ordini};
-\draw[freccia] (jm) -- (c);
-\draw[freccia] (c.east) -- (w1.west);
-\end{tikzpicture}}
-\caption{L'ambiente locale: tre macchine simulate.}
+\begin{tikzpicture}[every node/.append style={font=\small}]
+% Nodo control plane
+\node[kube] (apis) at (0,0.6) {API server\\scheduler, etcd};
+\node[kube] (np) at (0,-0.9) {NodePort\\30080 / 30030};
+\node[gruppo, fit=(apis)(np), label={[etichetta, align=center]above:\texttt{kintsugi-control-plane}\\mai guastato}] (ncp) {};
+% Nodo calcolo
+\node[copie] (api) at (4.2,0.7) {API};
+\node[copie] (wk) at (4.2,-0.9) {Worker};
+\node[gruppo, fit=(api)(wk), inner sep=9pt, label={[etichetta, align=center]above:\texttt{kintsugi-worker2}\\ruolo: \texttt{calcolo}}] (nc) {};
+% Nodo dati
+\node[db, minimum width=1.7cm] (pg) at (8.6,0.7) {PostgreSQL};
+\node[coda] (mq) at (8.6,-0.95) {};
+\node[etichetta, below=0.5mm of mq] (mql) {RabbitMQ};
+\node[gruppo, fit=(pg)(mq)(mql), inner sep=7pt, label={[etichetta, align=center]above:\texttt{kintsugi-worker}\\ruolo: \texttt{dati}}] (nd) {};
+% Cornice Docker e host
+\begin{scope}[on background layer]
+\coordinate (alto) at (4.2,2.55);
+\node[cluster, fit=(ncp)(nd)(nc)(alto), inner sep=8pt, label={[etichetta, anchor=north east]south east:Docker Desktop (kind)}] (dk) {};
+\end{scope}
+\node[box, minimum width=2cm] (jm) at (-1.3,-3.9) {JMeter\\{\scriptsize sul computer}};
+\node[box, minimum width=2cm] (br) at (1.3,-3.9) {Browser\\{\scriptsize Grafana}};
+\draw[freccia] (jm.north) -- node[etichetta, left, pos=0.3] {127.0.0.1:8080} ([xshift=-5mm]np.south);
+\draw[freccia] (br.north) -- node[etichetta, right, pos=0.3] {127.0.0.1:3000} ([xshift=5mm]np.south);
+\draw[freccia] (np.north east) -- (api.west);
+\draw[freccia] (api.east) -- node[etichetta, above] {sincrono} (pg.west);
+\draw[freccia] (api.south east) -- node[etichetta, sloped, above, pos=0.35] {pubblica} (mq.north west);
+\draw[freccia] (mq.west) -- node[etichetta, below] {consegna} (wk.east);
+\node[etichetta, text=accento, align=left, anchor=north west] at (3.3,-3.4) {Piazzamento dei pod sui nodi: preferenza,\\da fissare in D0006 (issue \#14).};
+\end{tikzpicture}
+\caption{Ambiente locale: tre nodi simulati da kind dentro Docker Desktop. Le richieste entrano dal control plane e raggiungono i pod su qualunque nodo.}
 \label{fig:deploy-locale}
 \end{figure}
 
-Il file \texttt{deploy/k8s/kind-cluster.yaml} descrive queste tre macchine: chiunque può ricrearle identiche con un comando.
+\paragraph{Computer di misura.} Il Mac di F.~Terrecuso (8 GB) serve per sviluppare e provare. Le misure ufficiali si fanno solo sul MacBook M5 di G.~Vellotti (16 GB, Docker con 7,75 GiB e 10 CPU), così la memoria scarsa non altera i risultati (D0013). Se questo computer non fosse disponibile, si passerebbe, per l'intera campagna, al PC da 64 GB.
 
-\paragraph{I due computer del gruppo.} Il Mac di F.~Terrecuso (8 GB) serve per sviluppare e provare. Le misure vere si fanno sul MacBook M5 di G.~Vellotti (16 GB), così la memoria scarsa non falsa i risultati (decisione D0013). In caso di problemi si passerebbe, per tutta la campagna, al PC da 64 GB.
+\paragraph{Limite dell'ambiente.} I nodi di kind sono container sullo stesso computer: condividono CPU, memoria, disco e orologio. Lo spegnimento di un nodo (F6) è quindi simulato, e i dischi locali legati al nodo dati non possono essere recuperati da un altro nodo (capitolo~\ref{cap:validita}).
 
-\section{Ambiente B -- nel cloud (AWS)}
+\section{Ambiente B -- AWS}
+\label{sec:aws}
 
-Ripetiamo una parte degli esperimenti su AWS, con tre macchine vere in tre edifici diversi. I servizi usati:
+Una parte degli esperimenti (V2 e V3, carichi W1 e W2, guasti F1, F2, F3 e F6) si ripete su AWS, con macchine reali distribuite su zone di disponibilità diverse. I servizi usati sono:
 
 \begin{description}
-  \item[EKS] il ``cervello'' di Kubernetes, gestito da Amazon.
-  \item[EC2] le macchine: tre per il sistema, una per generare gli ordini.
-  \item[ALB] il bilanciatore che smista le richieste.
-  \item[EBS] i dischi del database e della coda.
+  \item[EKS] il control plane di Kubernetes, gestito da AWS.
+  \item[EC2] le macchine virtuali: tre nodi per il sistema, una per JMeter nella stessa regione.
+  \item[ALB] il bilanciatore di carico, con \textit{pod readiness gate}: un pod riceve traffico solo quando anche l'ALB lo considera pronto.
+  \item[EBS] i dischi di rete di database e broker, nella stessa zona dei loro pod.
 \end{description}
 
-Costo stimato dell'intera fase: circa 15--20 dollari, coperti dai crediti gratuiti di un account nuovo. Il rischio vero è dimenticare risorse accese: ogni sessione termina con una verifica che tutto sia stato spento.
+Regione, tipi di istanza e strumento di creazione del cluster sono oggetto di D0009.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[every node/.append style={font=\small}]
+\foreach \i/\z in {0/a, 1/b, 2/c} {
+  \node[pod, minimum width=2.6cm] (n\z) at (\i*4.1,0) {nodo EC2\\{\scriptsize API, worker}};
+}
+\node[db, minimum width=2.3cm, minimum height=1.35cm, font=\scriptsize] (pg) at (0,-2.0) {PostgreSQL\\RabbitMQ};
+\node[etichetta, below=0mm of pg] (ebs) {dischi EBS};
+\begin{scope}[on background layer]
+\node[gruppo, fit=(na)(pg)(ebs), label={[etichetta]above:zona a}] (za) {};
+\node[gruppo, fit=(nb), label={[etichetta]above:zona b}] (zb) {};
+\node[gruppo, fit=(nc), label={[etichetta]above:zona c}] (zc) {};
+\end{scope}
+\node[kube, minimum width=8cm] (alb) at (4.1,2.1) {Application Load Balancer (pod readiness gate)};
+\foreach \z in {a,b,c} \draw[freccia] (alb.south -| n\z) -- (n\z);
+\node[kube] (eks) at (11.0,-2.0) {EKS\\control plane};
+\node[etichetta, below=1mm of eks] {gestito da AWS};
+\begin{scope}[on background layer]
+\node[cluster, fit=(za)(zb)(zc)(alb)(eks), inner sep=12pt, label={[etichetta, anchor=north east]south east:VPC, una regione AWS (D0009)}] (vpc) {};
+\end{scope}
+\node[box, minimum width=2.2cm] (jm) at (-2.2,2.1) {JMeter\\{\scriptsize EC2}};
+\draw[freccia] (jm) -- (alb);
+\end{tikzpicture}
+\caption{Ambiente AWS: nodi in zone diverse dietro un ALB; database e broker in una sola zona, con dischi EBS.}
+\label{fig:deploy-aws}
+\end{figure}
+
+\paragraph{Costi.} La stima per l'intera fase AWS è di circa 15--20 dollari, coperti dai crediti di un account nuovo. Il rischio principale è lasciare risorse accese: un allarme di budget è attivo e ogni sessione termina con la distruzione del cluster e la verifica che non restino load balancer, volumi o indirizzi IP a pagamento.

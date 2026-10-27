@@ -8,3 +8,4 @@ I **limiti degli strumenti** emersi si raccolgono anche nella tabella qui sotto,
 
 | Data | Strumento | Limite | Impatto sulle misure | Voce del diario |
 |---|---|---|---|---|
+| 27/10/2026 | TikZ (`patterns`) con pdfTeX | Il riempimento tratteggiato produce un PDF che i lettori basati su Poppler non leggono | Nessuno sulle misure; figure del documento da compilare senza `patterns` | [2026-10-27](2026-10-27-revisione-documento.md) |

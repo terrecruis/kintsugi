@@ -1,7 +1,52 @@
 \chapter{Pianificazione}
 \label{app:pianificazione}
 
-Il progetto dura dodici settimane, dal 22/10/2026 al 13/01/2027. Ogni milestone è un controllo: se non è superato, non si va avanti. Il dettaglio è in \texttt{report/fasi-e-milestone.md}.
+Il progetto dura dodici settimane, dal 22/10/2026 al 13/01/2027; ogni settimana va dal giovedì al mercoledì. Ogni milestone è un punto di controllo con un criterio verificabile: se il criterio non è soddisfatto non si passa alla fase successiva. Il dettaglio delle attività e dei criteri è in \texttt{report/fasi-e-milestone.md}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=0.72cm, y=0.58cm, every node/.append style={font=\scriptsize}]
+% Intestazione delle settimane
+\foreach \w in {1,...,12} {
+  \node[text=grigiotesto] at (\w-0.5,0.75) {S\w};
+  \draw[black!10] (\w,0.3) -- (\w,-9.3);
+}
+\draw[black!10] (0,0.3) -- (0,-9.3);
+% Fasi: riga / nome / inizio / fine / ore
+\foreach \r/\n/\a/\b/\h in {
+  1/F0 Preparazione/0/1/10,
+  2/F1 Architettura e protocollo/0/2/32,
+  3/F2 App minima/1/3/20,
+  4/F3 Kubernetes locale/2/5/48,
+  5/F4 Banco di prova/4/7/55,
+  6/F5 Campagna locale/6/8/48,
+  7/F6 AWS: prova e sessioni/5/6/40,
+  8/F7 Analisi/9/11/26,
+  9/F8 Report e orale/10/12/27} {
+  \node[anchor=east] at (-0.2,-\r+0.5) {\n};
+  \fill[unina!70, rounded corners=1.5pt] (\a+0.05,-\r+0.2) rectangle (\b-0.05,-\r+0.8);
+  \fill[unina!25] (12.6,-\r+0.22) rectangle (12.6+\h*0.045,-\r+0.78);
+  \node[anchor=west] at (12.6+\h*0.045,-\r+0.5) {\h~h};
+}
+% Sessioni AWS
+\fill[unina!70, rounded corners=1.5pt] (8.05,-6.8) rectangle (9.95,-6.2);
+\node[anchor=west, text=white] at (8.1,-6.5) {sessioni};
+% Milestone
+\foreach \m/\w in {M1/2, M2/3, M3/5, M3b/6, M4/7, M5/8, M6/10, M7/12} {
+  \fill[accento] (\w,-9.65) -- ++(0.13,-0.18) -- ++(-0.13,-0.18) -- ++(-0.13,0.18) -- cycle;
+  \node[text=accento, below] at (\w,-9.95) {\m};
+}
+\node[anchor=east, text=accento] at (-0.2,-9.83) {Milestone};
+% Feste
+\begin{scope}[on background layer]
+\fill[accento!10] (8,0.3) rectangle (11,-9.3);
+\end{scope}
+\node[text=accento] at (9.5,-9.0) {festività};
+\node[font=\scriptsize\bfseries, text=unina, anchor=west] at (12.6,0.75) {ore};
+\end{tikzpicture}
+\caption{Diagramma di Gantt delle fasi F0--F8 con le milestone e le ore stimate per fase (306 in totale).}
+\label{fig:gantt}
+\end{figure}
 
 \begin{table}[htbp]
 \centering
@@ -9,20 +54,20 @@ Il progetto dura dodici settimane, dal 22/10/2026 al 13/01/2027. Ogni milestone 
 \label{tab:milestone}
 \begin{tabularx}{\linewidth}{@{}llL@{}}
 \toprule
-\textbf{Milestone} & \textbf{Entro il} & \textbf{Cosa deve essere pronto} \\
+\textbf{Milestone} & \textbf{Entro il} & \textbf{Criterio di passaggio} \\
 \midrule
-M1 & 04/11/2026 & Decisioni e previsioni scritte \\
-M2 & 11/11/2026 & L'applicazione funziona (V1--V3) \\
-M3 & 25/11/2026 & L'applicazione gira su Kubernetes; primo guasto misurato \\
-M3b & 02/12/2026 & Prova su AWS: cluster creato e distrutto, costi noti \\
-M4 & 09/12/2026 & Il banco di prova dà misure affidabili \\
-M5 & 16/12/2026 & Tutti gli esperimenti locali fatti \\
-M6 & 30/12/2026 & Esperimenti su AWS fatti, tutto spento \\
-M7 & 13/01/2027 & Consegna \\
+M1 & 04/11/2026 & Decisioni scritte, parametri fissati, previsioni registrate (tag \texttt{m1}) \\
+M2 & 11/11/2026 & Applicazione minima V1--V3 funzionante, nessun ordine perso con il database fermo per 60~s \\
+M3 & 25/11/2026 & V1--V3 su kind a 3 nodi; un crash F1 misurato con risoluzione sotto il secondo \\
+M3b & 02/12/2026 & Cluster AWS creato e distrutto, costi e limiti noti \\
+M4 & 09/12/2026 & Banco di prova ripetibile; failover di V4 e scalatura di V5 verificati \\
+M5 & 16/12/2026 & 245 run validi; decisione sull'estensione della fase AWS \\
+M6 & 30/12/2026 & Sessioni AWS svolte, risorse distrutte, costi annotati \\
+M7 & 13/01/2027 & Report, diario, repository e orale pronti \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\paragraph{Impegno stimato.} Circa 306 ore in due, cioè circa 13 ore a settimana a testa.
+\paragraph{Impegno stimato.} Circa 306 ore in due, cioè circa 12,7 ore a settimana a testa. Le settimane S9--S11 cadono durante le festività: le attività che vi ricadono (sessioni AWS e analisi) si confermano o si ripianificano a M5.
 
-\paragraph{Se siamo in ritardo} rinunciamo, in quest'ordine, a: spegnimento di una macchina (F6), V5, rallentamento del database (F5), parte degli esperimenti su AWS, una delle due modalità di V4. Non rinunciamo mai a V1--V3, ai guasti principali e alle previsioni.
+\paragraph{Piano di taglio.} In caso di ritardo si rinuncia, in quest'ordine, a: perdita di un nodo (F6), V5, latenza del database (F5), parte delle sessioni AWS, replica sincrona di V4 (V4s). Non si rinuncia mai al protocollo di misura, a V1--V3, ai guasti F1--F4 e F7 con 10 ripetizioni, alle previsioni e al diario.

@@ -1,40 +1,42 @@
-\chapter{Cosa vogliamo scoprire}
+\chapter{Obiettivi e domande di ricerca}
 \label{cap:obiettivi}
 
 \section{Obiettivo}
 
-Capire, con esperimenti ripetibili, quanto le scelte di architettura proteggono un servizio dai guasti, e confrontare i risultati con le nostre previsioni.
+Valutare, con esperimenti ripetibili, quanto le scelte architetturali proteggono un servizio dai guasti, e confrontare i risultati con previsioni formulate prima delle misure.
 
-\section{Le domande}
+\section{Domande di ricerca}
 
 \begin{table}[htbp]
 \centering
-\caption{Le sei domande del progetto.}
+\caption{Le domande di ricerca e le versioni confrontate.}
 \label{tab:rq}
-\begin{tabularx}{\linewidth}{@{}lLl@{}}
+\begin{tabularx}{\linewidth}{@{}lLll@{}}
 \toprule
-\textbf{ID} & \textbf{Domanda} & \textbf{Confronto} \\
+\textbf{ID} & \textbf{Domanda} & \textbf{Tema} & \textbf{Confronto} \\
 \midrule
-RQ1 & Avere più copie del servizio quanto riduce i fermi? & V1 / V2 \\
-RQ2 & Mettere una coda tra chi riceve e chi salva gli ordini conviene? & V2 / V3 \\
-RQ3 & Quanto ci mette il sistema ad accorgersi di un guasto e a ripararlo? & tutte \\
-RQ4 & Una copia di riserva del database quanto aiuta, e quanti dati si rischiano? & V2 / V4 \\
-RQ5 & Aggiungere lavoratori in automatico durante un picco conviene, anche nei costi? & V3 / V5 \\
-RQ6 & I risultati ottenuti sul nostro computer valgono anche nel cloud (AWS)? & locale / AWS \\
+RQ1 & Quanto fermo si evita passando da una a più copie dell'API? & ridondanza senza stato & V1 / V2 \\
+RQ2 & Cosa cambia, in tempi, ordini persi e ripristino, inserendo una coda tra API e database? & asincronia & V2 / V3 \\
+RQ3 & Quanto dipende il ripristino dal tipo di guasto e dai parametri delle sonde? & rilevamento & tutte \\
+RQ4 & Quanto fermo evita una replica del database con failover, e quanti dati si rischiano? & ridondanza con stato & V2 / V4 \\
+RQ5 & L'autoscaling sulla lunghezza della coda assorbe meglio un picco, a parità di costo? & elasticità & V3 / V5 \\
+RQ6 & Quali risultati locali si ripetono su AWS, e perché gli altri cambiano? & trasferibilità & locale / AWS \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\section{Cosa ci aspettiamo}
+\section{Ipotesi di partenza}
 
-\begin{itemize}
-  \item Più copie del servizio riducono molto i fermi, ma non se a rompersi è il database, che resta unico.
-  \item Con la coda il servizio continua ad accettare ordini anche se il database è fermo; li salva quando torna.
-  \item Un programma che \emph{si blocca} è più difficile da scoprire di uno che \emph{si spegne}.
-  \item La copia di riserva del database accorcia i fermi; a seconda di come è configurata, può perdere gli ultimi ordini oppure rallentare tutte le scritture.
-  \item Aggiungere lavoratori in automatico smaltisce i picchi, ma con un certo ritardo.
-\end{itemize}
+Le ipotesi qualitative sono elencate qui; le previsioni numeriche sono nel capitolo~\ref{cap:previsioni}.
 
-\section{Cosa non facciamo}
+\begin{enumerate}[label=\textbf{H\arabic*}]
+  \item Più copie dell'API riducono molto il fermo dovuto all'API, ma non quello dovuto al database, che resta unico (RQ1).
+  \item Con la coda il servizio continua ad accettare ordini anche con il database fermo e li salva al suo ritorno; in cambio cresce il tempo tra ricezione e salvataggio (RQ2).
+  \item Un processo bloccato è rilevato più tardi di uno terminato, e il ritardo dipende dalla frequenza delle sonde (RQ3).
+  \item La replica del database accorcia il fermo; con replica asincrona si possono perdere gli ultimi ordini, con replica sincrona ogni scrittura è più lenta (RQ4).
+  \item L'autoscaling smaltisce un picco con meno risorse di una configurazione fissa sovradimensionata, ma con un ritardo iniziale (RQ5).
+\end{enumerate}
 
-Più copie del broker, più copie del ``cervello'' di Kubernetes (\emph{control plane}), database distribuito su più zone del cloud, sicurezza, ottimizzazione del codice.
+\section{Fuori ambito}
+
+Non fanno parte del progetto: la replica del broker, la replica del control plane di Kubernetes, un database distribuito su più zone del cloud, la sicurezza e l'ottimizzazione delle prestazioni del codice. Il control plane è unico e non viene mai guastato (capitolo~\ref{cap:validita}).

@@ -1,4 +1,4 @@
-\begin{decisione}{D0015}{Aggiungere V5 (lavoratori automatici)}{Accettata}{22/10/2026}
+\begin{decisione}{D0015}{Aggiungere V5 (autoscaling dei worker)}{Accettata}{22/10/2026}
 
 \contesto
 In V3 i worker sono sempre tre: durante un picco sono pochi, nei momenti tranquilli sono troppi.
@@ -7,6 +7,6 @@ In V3 i worker sono sempre tre: durante un picco sono pochi, nei momenti tranqui
 V5 aggiunge e toglie worker in base a quanto è lunga la coda (con lo strumento KEDA), da 1 a 10.
 
 \conseguenze
-Per un confronto onesto con V3 contiamo anche quante risorse consuma ogni versione (in worker-secondi), non solo quanto è veloce. Poiché V5 parte con 1 worker e V3 ne ha 3, la confrontiamo anche con V3 a 1 worker fissi e V3 a 10 worker fissi, sotto il carico con picco (W2).
+Per un confronto onesto con V3 contiamo anche quante risorse consuma ogni versione (in worker-secondi), non solo quanto è veloce. Poiché V5 parte con 1 worker e V3 ne ha 3, la confrontiamo anche con V3 a 1 worker fisso e V3 a 10 worker fissi, sotto il carico con picco (W2).
 
 \end{decisione}

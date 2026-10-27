@@ -1,7 +1,7 @@
-\chapter{Le decisioni}
+\chapter{Decisioni architetturali}
 \label{cap:decisioni}
 
-Ogni scelta importante è scritta in una scheda: il problema, cosa abbiamo deciso e cosa comporta. Le schede ``da scrivere'' le completeremo entro la milestone M1.
+Ogni scelta rilevante è documentata in una scheda ADR con tre parti: contesto, decisione e conseguenze. Una decisione nasce \emph{proposta} e diventa \emph{accettata} dopo la revisione e l'approvazione dell'altro autore. Le schede ancora da scrivere vanno completate entro la milestone M1 (04/11/2026).
 
 \begin{table}[htbp]
 \centering
@@ -24,20 +24,20 @@ D0010 & Connessioni al database & da scrivere \\
 D0011 & Linguaggio dell'applicazione & da scrivere \\
 D0012 & Un solo codice per tutte le versioni & accettata \\
 D0013 & Su quale computer si misura & accettata \\
-D0014 & Aggiungere V4 (database di riserva) & accettata \\
-D0015 & Aggiungere V5 (lavoratori automatici) & accettata \\
+D0014 & Aggiungere V4 (database replicato) & accettata \\
+D0015 & Aggiungere V5 (autoscaling dei worker) & accettata \\
 D0016 & Come provocare i guasti & accettata \\
 D0017 & Come esprimere la disponibilità & accettata \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\section{Valori principali}
+\section{Parametri}
 \label{sec:parametri}
 
 \begin{table}[htbp]
 \centering
-\caption{Valori proposti, uguali per tutte le versioni.}
+\caption{Parametri proposti, uguali per tutte le versioni salvo dove indicato.}
 \label{tab:parametri}
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.5\linewidth}L@{}}
 \toprule
@@ -52,7 +52,7 @@ Sonde, configurazione \emph{veloce}: API pronta / viva & ogni 1 s / ogni 2 s; gu
 Sonde, configurazione \emph{standard} (valori predefiniti di Kubernetes): API pronta / viva & ogni 10 s / ogni 10 s; guasto dichiarato dopo 3 controlli falliti di fila \\
 Tempo previsto per accorgersi di un blocco (F7): veloce / standard & circa 3--6 s / circa 30 s \\
 KEDA: ogni quanto controlla la coda / oltre quanti ordini aggiunge worker / attesa prima di toglierli & \todo{valori da fissare} \\
-Riferimenti per V5 (carico W2) & V3 con 1 worker fissi e V3 con 10 worker fissi \\
+Riferimenti per V5 (carico W2) & V3 con 1 worker fisso e V3 con 10 worker fissi \\
 Costo di una versione in locale & worker-secondi: la somma, nel tempo, del numero di worker accesi \\
 \bottomrule
 \end{tabularx}

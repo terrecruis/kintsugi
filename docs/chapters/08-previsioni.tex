@@ -1,24 +1,36 @@
-\chapter{Cosa prevediamo}
+\chapter{Previsioni}
 \label{cap:previsioni}
 
-Le previsioni si scrivono e si salvano su Git \textbf{prima} degli esperimenti: la data del salvataggio dimostra che non le abbiamo aggiustate dopo aver visto i risultati.
+Le previsioni si scrivono e si registrano su Git \textbf{prima} di qualsiasi misura, con il tag \texttt{m1}: la data del commit dimostra che non sono state adattate ai risultati. Dopo il tag non si modificano; uno scarto tra previsto e misurato si spiega nel report, non si corregge.
 
-\section{Come si calcola un tempo di fermo}
+\section{Modello del fermo}
 
-\[
-  \text{fermo} \approx \text{tempo per accorgersene} + \text{tempo per riavviare} + \text{tempo per tornare pronto}
-\]
+Il fermo previsto per un guasto si ricava dai parametri configurati (tabella~\ref{tab:parametri}), non da una stima a occhio:
+\begin{equation}
+  D \approx \underbrace{T_{\text{ril}}}_{\text{rilevamento}} + \underbrace{T_{\text{riavvio}}}_{\text{avvio del container}} + \underbrace{T_{\text{pronto}}}_{\text{prima readiness positiva}} + \underbrace{T_{\text{arretrato}}}_{\text{solo V3, V5}}
+  \label{eq:fermo}
+\end{equation}
 
 \begin{itemize}
-  \item Se un programma \textbf{si spegne}, Kubernetes se ne accorge subito.
-  \item Se \textbf{si congela}, se ne accorge solo al controllo successivo, quindi conta quanto spesso controlla.
-  \item Con la \textbf{coda} (V3, V5) va aggiunto il tempo per smaltire gli ordini accumulati.
-  \item Con il \textbf{database di riserva} (V4) il riavvio è sostituito dal passaggio alla riserva.
+  \item \textbf{Rilevamento.} Per un crash è quasi nullo. Per un blocco vale circa $p \times s$, con $p$ periodo della sonda di liveness e $s$ soglia di fallimenti consecutivi.
+  \item \textbf{Riavvio e pronto.} Si stimano da una misura a vuoto dei tempi di avvio, eseguita in F3 prima della campagna.
+  \item \textbf{Arretrato.} Con la coda, gli ordini accumulati durante il guasto vanno smaltiti: $T_{\text{arretrato}} \approx \dfrac{\lambda \cdot D_0}{\mu - \lambda}$, con $\lambda$ ritmo di arrivo, $\mu$ capacità complessiva dei worker e $D_0$ durata dell'interruzione.
+  \item \textbf{Failover (V4).} Il riavvio è sostituito dalla promozione dello standby da parte dell'operatore CNPG.
 \end{itemize}
 
-\section{Dalla misura alla disponibilità}
+Ogni previsione riporta la formula con i valori usati.
 
-Ipotizziamo quanto spesso capita ogni guasto (per esempio, un'API che si spegne una volta al giorno) e moltiplichiamo per il fermo misurato. Sommando tutti i guasti otteniamo i minuti di fermo al mese, da confrontare con il limite di 43 minuti (D0017).
+\section{Dal fermo alla disponibilità}
+
+La disponibilità di un componente è
+\begin{equation}
+  A = \frac{\text{MTBF}}{\text{MTBF} + \text{MTTR}}.
+\end{equation}
+L'MTTR si misura; l'MTBF invece non è misurabile, perché i guasti li iniettiamo noi, ed è quindi un'\emph{ipotesi dichiarata} (per esempio un guasto al giorno per componente). Il fermo mensile atteso si ottiene sommando i contributi dei singoli guasti:
+\begin{equation}
+  U_{\text{mese}} = \sum_i \lambda_i \cdot D_i ,
+\end{equation}
+con $\lambda_i$ frequenza ipotizzata del guasto $i$ in un mese e $D_i$ fermo misurato. Il risultato si confronta con il budget di errore dello SLO al 99,9\%, pari a 43,2 minuti su 30 giorni (D0017), e si esprime anche in ``numero di nove''.
 
 \section{Previsioni}
 
