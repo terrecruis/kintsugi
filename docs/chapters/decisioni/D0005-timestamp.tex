@@ -1,4 +1,4 @@
-\begin{decisione}{D0005}{Come misurare il tempo di ogni ordine}{Proposta}{22/10/2026}
+\begin{decisione}{D0005}{Come misurare il tempo di ogni ordine}{Accettata}{27/10/2026}
 
 \contesto
 Il tempo end-to-end di un ordine è la differenza tra l'istante in cui l'API lo riceve e quello in cui il database lo salva. Sottrarre istanti presi da orologi diversi introdurrebbe lo sfasamento tra gli orologi; in particolare l'orologio del client (macOS) e quello del cluster (la macchina virtuale di Docker) non sono allineati.
@@ -11,6 +11,6 @@ Il tempo end-to-end di un ordine è la differenza tra l'istante in cui l'API lo 
 \end{itemize}
 
 \conseguenze
-Il tempo di ogni ordine resta registrato nel database anche dopo un guasto e non dipende dall'orologio del client. La latenza vista dal client resta una misura separata, calcolata solo con l'orologio del client. Su AWS l'incertezza dovuta allo sfasamento tra nodi si somma a quella della misura (capitolo~\ref{cap:validita}).
+Il tempo di ogni ordine resta registrato nel database anche dopo un guasto e non dipende dall'orologio del client. \texttt{ts\_scrittura} è l'istante dell'inserimento, non del commit: l'attesa della replica sincrona in V4s non entra nel tempo end-to-end e si legge nella latenza del client. La latenza vista dal client resta una misura separata, calcolata solo con l'orologio del client. Su AWS l'incertezza dovuta allo sfasamento tra nodi si somma a quella della misura (capitolo~\ref{cap:validita}).
 
 \end{decisione}

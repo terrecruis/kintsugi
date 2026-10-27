@@ -163,7 +163,7 @@ Si provano due modalità di replica:
   \item[V4s, sincrona] il primario conferma solo dopo che lo standby ha ricevuto la scrittura: nessuna perdita (RPO $= 0$), ma ogni scrittura è più lenta.
 \end{description}
 
-Primario e standby devono stare su nodi diversi, altrimenti la replica non protegge dal guasto di una macchina. Le regole di piazzamento sono ancora da fissare (D0006, issue \#14).
+Primario e standby devono stare su nodi diversi, altrimenti la replica non protegge dal guasto di una macchina. Il primario sta sul nodo dati e lo standby sull'altro worker, con regola rigida (D0006).
 
 \begin{figure}[htbp]
 \centering
@@ -186,7 +186,7 @@ Primario e standby devono stare su nodi diversi, altrimenti la replica non prote
 \draw[sonda] (op) -- node[etichetta, left] {sposta\\l'indirizzo} (rw);
 \begin{scope}[on background layer]
 \node[gruppo, fit=(pr), label={[etichetta]above:nodo A}] {};
-\node[gruppo, fit=(st), label={[etichetta, align=center]below:nodo B, diverso da A\\(D0006, da fissare)}] {};
+\node[gruppo, fit=(st), label={[etichetta, align=center]below:nodo B, diverso da A\\(D0006)}] {};
 \end{scope}
 \end{tikzpicture}
 \caption{V4: l'API scrive sempre sul Service \texttt{-rw}; se il primario cade, l'operatore CNPG promuove lo standby e sposta il Service su di esso.}

@@ -1,12 +1,12 @@
-\begin{decisione}{D0008}{Quanto aspettare prima di arrendersi}{Proposta}{22/10/2026}
+\begin{decisione}{D0008}{Quanto aspettare prima di arrendersi}{Accettata}{27/10/2026}
 
 \contesto
 Se l'API continua a lavorare dopo che il cliente ha già rinunciato, spreca risorse proprio durante il guasto.
 
 \scelta
-Il cliente aspetta al massimo 2 secondi; l'API si arrende dopo 1,5 secondi e risponde con un errore. Così il cliente riceve sempre una risposta prima di rinunciare.
+Il generatore di carico (JMeter) aspetta al massimo 2 secondi: è un'impostazione nostra, uguale per tutte le versioni, così il confronto è equo. L'API si arrende dopo 1,5 secondi e risponde con un errore (503). Così il generatore di carico riceve sempre una risposta esplicita prima di rinunciare.
 
 \conseguenze
-Meno lavoro sprecato e risultati più chiari da interpretare.
+Meno lavoro sprecato e risultati più chiari da interpretare: un errore è \emph{dichiarato} (503) e non un semplice timeout, e si riducono gli ordini nella categoria ``completato dopo il timeout'' (capitolo~\ref{cap:misura}). La regola ``l'API si arrende prima del client'' si può applicare perché controlliamo entrambi i lati; con clienti reali il loro timeout sarebbe sconosciuto.
 
 \end{decisione}

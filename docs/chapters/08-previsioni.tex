@@ -12,7 +12,7 @@ Il fermo previsto per un guasto si ricava dai parametri configurati (tabella~\re
 \end{equation}
 
 \begin{itemize}
-  \item \textbf{Rilevamento.} Per un crash è quasi nullo. Per un blocco vale circa $p \times s$, con $p$ periodo della sonda di liveness e $s$ soglia di fallimenti consecutivi.
+  \item \textbf{Rilevamento.} Per un crash è quasi nullo. Per un blocco vale circa $p \times s + t$, con $p$ periodo della sonda di liveness, $s$ soglia di fallimenti consecutivi e $t$ timeout della sonda (1~s, D0007).
   \item \textbf{Riavvio e pronto.} Si stimano da una misura a vuoto dei tempi di avvio, eseguita in F3 prima della campagna.
   \item \textbf{Arretrato.} Con la coda, gli ordini accumulati durante il guasto vanno smaltiti: $T_{\text{arretrato}} \approx \dfrac{\lambda \cdot D_0}{\mu - \lambda}$, con $\lambda$ ritmo di arrivo, $\mu$ capacità complessiva dei worker e $D_0$ durata dell'interruzione.
   \item \textbf{Failover (V4).} Il riavvio è sostituito dalla promozione dello standby da parte dell'operatore CNPG.
