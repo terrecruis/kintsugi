@@ -1,0 +1,17 @@
+\begin{decisione}{D0009}{Strumenti e regione per AWS}{Accettata}{27/10/2026}
+
+\contesto
+Una parte degli esperimenti si ripete su AWS per rispondere a RQ6 (capitolo~\ref{cap:deployment}). Le sessioni sono brevi e a pagamento: servono scelte che le rendano ripetibili, comparabili con l'ambiente locale e poco costose, e che permettano di distruggere tutto con certezza a fine sessione.
+
+\scelta
+\begin{itemize}
+  \item \textbf{Regione:} Irlanda (\texttt{eu-west-1}), che ha tre zone di disponibilità. Il generatore di carico (JMeter) gira su un'istanza EC2 nella stessa regione, per cui la distanza dall'Italia non entra nelle misure.
+  \item \textbf{Creazione del cluster:} \texttt{eksctl}, con un file YAML nel repository, che è infrastruttura come codice. Con un solo comando si distrugge tutto; a fine sessione si verifica che non restino risorse a pagamento.
+  \item \textbf{Istanze:} a prestazioni fisse (famiglia \texttt{m5}), non \emph{burstable} (famiglia \texttt{t3}): queste ultime hanno crediti di CPU che si esauriscono sotto carico e falserebbero le misure. Il tipo preciso si fissa nella prova di S6 e resta lo stesso in tutte le sessioni.
+  \item \textbf{Kubernetes:} versione 1.37, la stessa del cluster locale.
+\end{itemize}
+
+\conseguenze
+I due ambienti usano la stessa versione di Kubernetes e le sessioni usano sempre la stessa regione e gli stessi tipi di istanza. Un cluster EKS in supporto standard costa 0,10~USD l'ora, più nodi, dischi e indirizzi pubblici. Da verificare nella prova di S6: il prezzo della regione, il NAT gateway che \texttt{eksctl} crea per impostazione predefinita e che costa a ore (si può disattivare), e i componenti aggiuntivi necessari per usare l'ALB e i dischi EBS (AWS Load Balancer Controller e driver EBS). Se regione o tipo di istanza cambiassero, le misure già fatte su AWS vanno ripetute.
+
+\end{decisione}

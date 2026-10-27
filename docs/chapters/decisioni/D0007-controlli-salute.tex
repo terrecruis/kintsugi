@@ -1,12 +1,12 @@
-\begin{decisione}{D0007}{Come Kubernetes controlla che i servizi stiano bene}{Proposta}{22/10/2026}
+\begin{decisione}{D0007}{Come Kubernetes controlla che i servizi stiano bene}{Accettata}{27/10/2026}
 
 \contesto
-Kubernetes chiede periodicamente a ogni copia dell'API ``sei viva?'' e ``sei pronta?''. Se la risposta dipendesse dal database, quando il database si ferma tutte le copie verrebbero riavviate insieme, peggiorando il guasto.
+Kubernetes chiede periodicamente a ogni copia dell'API ``sei viva?'' (sonda di \emph{liveness}) e ``sei pronta?'' (sonda di \emph{readiness}). Se la risposta dipendesse dal database, quando il database si ferma accadrebbero due cose: la sonda di liveness farebbe riavviare tutte le copie insieme, peggiorando il guasto; la sonda di readiness le farebbe uscire tutte dal Service, e in V3 e V5 l'API smetterebbe di accettare ordini anche se potrebbe metterli in coda, annullando il vantaggio dell'asincrono.
 
 \scelta
-I due controlli verificano solo l'API stessa, non il database. Se il database è fermo, l'API risponde subito con un errore.
+I due controlli verificano solo l'API stessa, non il database. Se il database è fermo, l'API risponde subito con un errore. Per ogni sonda il tempo massimo di risposta (\emph{timeout}) è di 1~s, in tutte le configurazioni.
 
 \conseguenze
-Un guasto del database non trascina con sé l'API. Per il test F7 proviamo due frequenze di controllo (veloce e quella standard di Kubernetes).
+Un guasto del database non trascina con sé l'API. Per il test F7 proviamo due frequenze di controllo (veloce e quella standard di Kubernetes); il timeout è uguale nelle due, così la differenza dipende solo dal periodo. Con un processo bloccato ogni controllo fallisce allo scadere del timeout, che si somma al tempo di rilevamento (capitolo~\ref{cap:previsioni}). Le sonde riguardano le copie dell'API: i worker non ne hanno bisogno, perché un crash si vede dall'uscita del container, e il database di V4 è gestito dall'operatore CloudNativePG.
 
 \end{decisione}

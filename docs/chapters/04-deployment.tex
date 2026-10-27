@@ -9,8 +9,8 @@ Kubernetes avvia i componenti, ne controlla lo stato con le sonde e li riavvia q
 
 \begin{description}
   \item[\texttt{kintsugi-control-plane}] ospita il control plane ed è il punto d'ingresso: le porte 8080 (API) e 3000 (Grafana) del computer, esposte solo su \texttt{127.0.0.1}, arrivano alle NodePort 30080 e 30030. Non viene mai guastato.
-  \item[\texttt{kintsugi-worker}] etichetta \texttt{kintsugi/ruolo: dati}: ospita i componenti con stato, cioè database e broker, con i dischi locali del nodo.
-  \item[\texttt{kintsugi-worker2}] etichetta \texttt{kintsugi/ruolo: calcolo}: ospita i componenti senza stato (API e worker). È il nodo che si spegne nel guasto F6.
+  \item[\texttt{kintsugi-worker}] etichetta \texttt{kintsugi/ruolo: dati}: ospita i componenti con stato, cioè database e broker (e il primario di V4), con i dischi locali del nodo, e l'osservabilità (Prometheus, Grafana).
+  \item[\texttt{kintsugi-worker2}] etichetta \texttt{kintsugi/ruolo: calcolo}: è il nodo preferito dai componenti senza stato (API e worker) e ospita anche lo standby di V4. È il nodo che si spegne nel guasto F6. Le regole di piazzamento sono in D0006.
 \end{description}
 
 Tutti i nodi usano l'immagine \texttt{kindest/node:v1.37.0}, quindi Kubernetes 1.37.
@@ -44,7 +44,7 @@ Tutti i nodi usano l'immagine \texttt{kindest/node:v1.37.0}, quindi Kubernetes 1
 \draw[freccia] (api.east) -- node[etichetta, above] {sincrono} (pg.west);
 \draw[freccia] (api.south east) -- node[etichetta, sloped, above, pos=0.35] {pubblica} (mq.north west);
 \draw[freccia] (mq.west) -- node[etichetta, below] {consegna} (wk.east);
-\node[etichetta, text=accento, align=left, anchor=north west] at (3.3,-3.4) {Piazzamento dei pod sui nodi: preferenza,\\da fissare in D0006 (issue \#14).};
+\node[etichetta, text=accento, align=left, anchor=north west] at (3.3,-3.4) {Piazzamento dei pod sui nodi:\\regole in D0006.};
 \end{tikzpicture}
 \caption{Ambiente locale: tre nodi simulati da kind dentro Docker Desktop. Le richieste entrano dal control plane e raggiungono i pod su qualunque nodo.}
 \label{fig:deploy-locale}
@@ -66,7 +66,7 @@ Una parte degli esperimenti (V2 e V3, carichi W1 e W2, guasti F1, F2, F3 e F6) s
   \item[EBS] i dischi di rete di database e broker, nella stessa zona dei loro pod.
 \end{description}
 
-Regione, tipi di istanza e strumento di creazione del cluster sono oggetto di D0009.
+Regione (Irlanda, \texttt{eu-west-1}), famiglia di istanze (a prestazioni fisse), versione di Kubernetes (1.37, come in locale) e strumento di creazione del cluster (\texttt{eksctl}) sono fissati in D0009.
 
 \begin{figure}[htbp]
 \centering

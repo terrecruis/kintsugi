@@ -84,7 +84,7 @@ Progettare e scrivere le previsioni (M1) → costruire l'app (M2) → portarla s
 **Fatto quando:** ogni configurazione ha il numero previsto di run validi e ogni run supera il controllo di coerenza.
 
 ### F6 — Fase AWS · prova in S6, sessioni in S9-S10 · ~40 h · → M3b, M6
-**Prova (S6):** creare e distruggere il cluster con infrastruttura come codice (eksctl o Terraform) per scoprire limiti, permessi e costi reali.
+**Prova (S6):** creare e distruggere il cluster con infrastruttura come codice (eksctl, D0009) per scoprire limiti, permessi e costi reali.
 **Prima delle sessioni:** manifest parametrizzati, tabella dei parametri allineata (ALB compreso), piano delle 2-3 sessioni. Si fanno solo se confermate a M5.
 **Sessioni:** EKS su 2-3 zone, ALB con pod readiness gate, DB e broker in una zona, JMeter su EC2 nella stessa regione · V2 e V3 con W1 e W2, guasti F1, F2, F3, F6.
 **Dopo ogni sessione:** distruggere tutto e verificare che non restino risorse a pagamento (load balancer, NAT gateway, volumi, IP elastici).

@@ -11,17 +11,17 @@ Ogni scelta rilevante è documentata in una scheda ADR con tre parti: contesto, 
 \toprule
 \textbf{ID} & \textbf{Decisione} & \textbf{Stato} \\
 \midrule
-D0001 & Sincrono o con coda: pro e contro & proposta \\
-D0002 & Come configurare la coda & proposta \\
-D0003 & Come i worker ritentano quando il database è fermo & proposta \\
-D0004 & Come riconoscere e contare gli ordini doppi & proposta \\
-D0005 & Come misurare il tempo di ogni ordine & proposta \\
-D0006 & Dove stanno i dati & da scrivere \\
-D0007 & Come Kubernetes controlla che i servizi stiano bene & proposta \\
-D0008 & Quanto aspettare prima di arrendersi & proposta \\
-D0009 & Strumenti e regione per AWS & da scrivere \\
-D0010 & Connessioni al database & da scrivere \\
-D0011 & Linguaggio dell'applicazione & da scrivere \\
+D0001 & Sincrono o con coda: pro e contro & accettata \\
+D0002 & Come configurare la coda & accettata \\
+D0003 & Come i worker ritentano quando il database è fermo & accettata \\
+D0004 & Come riconoscere e contare gli ordini doppi & accettata \\
+D0005 & Come misurare il tempo di ogni ordine & accettata \\
+D0006 & Dove stanno i pod sui nodi & accettata \\
+D0007 & Come Kubernetes controlla che i servizi stiano bene & accettata \\
+D0008 & Quanto aspettare prima di arrendersi & accettata \\
+D0009 & Strumenti e regione per AWS & accettata \\
+D0010 & Connessioni al database & accettata \\
+D0011 & Linguaggio dell'applicazione & accettata \\
 D0012 & Un solo codice per tutte le versioni & accettata \\
 D0013 & Su quale computer si misura & accettata \\
 D0014 & Aggiungere V4 (database replicato) & accettata \\
@@ -45,12 +45,14 @@ D0017 & Come esprimere la disponibilità & accettata \\
 \midrule
 Copie dell'API (V2--V5) & 3 \\
 Worker (V3) / worker in V5 & 3 / da 1 a 10 \\
-Il cliente rinuncia dopo & 2 s \\
+Il generatore di carico (JMeter) rinuncia dopo & 2 s \\
 L'API rinuncia dopo & 1,5 s \\
-Il worker ritenta: attesa tra i tentativi / per almeno & da 0,5 a 10 s / 120 s \\
+Connessioni al database: per ogni pod che si collega / limite di PostgreSQL & 5 / 100 (predefinito, D0010) \\
+Il worker ritenta: attesa tra i tentativi / per almeno & da 0,5 a 10 s / 120 s (indicativo, da verificare sul campo, D0003) \\
 Sonde, configurazione \emph{veloce}: API pronta / viva & ogni 1 s / ogni 2 s; guasto dichiarato dopo 3 controlli falliti di fila \\
 Sonde, configurazione \emph{standard} (valori predefiniti di Kubernetes): API pronta / viva & ogni 10 s / ogni 10 s; guasto dichiarato dopo 3 controlli falliti di fila \\
-Tempo previsto per accorgersi di un blocco (F7): veloce / standard & circa 3--6 s / circa 30 s \\
+Sonde, timeout di ogni controllo (tutte le configurazioni) & 1 s (valore predefinito di Kubernetes, D0007) \\
+Tempo previsto per accorgersi di un blocco (F7): veloce / standard & circa 4--7 s / circa 31 s \\
 KEDA: ogni quanto controlla la coda / oltre quanti ordini aggiunge worker / attesa prima di toglierli & \todo{valori da fissare} \\
 Riferimenti per V5 (carico W2) & V3 con 1 worker fisso e V3 con 10 worker fissi \\
 Costo di una versione in locale & worker-secondi: la somma, nel tempo, del numero di worker accesi \\
@@ -65,8 +67,12 @@ I valori della configurazione \emph{standard} sono quelli predefiniti di Kuberne
 \input{chapters/decisioni/D0003-riprova-worker}
 \input{chapters/decisioni/D0004-ordini-doppi}
 \input{chapters/decisioni/D0005-timestamp}
+\input{chapters/decisioni/D0006-piazzamento}
 \input{chapters/decisioni/D0007-controlli-salute}
 \input{chapters/decisioni/D0008-timeout-deadline}
+\input{chapters/decisioni/D0009-aws}
+\input{chapters/decisioni/D0010-connessioni-database}
+\input{chapters/decisioni/D0011-linguaggio}
 \input{chapters/decisioni/D0012-un-repository}
 \input{chapters/decisioni/D0013-risorse-host}
 \input{chapters/decisioni/D0014-database-replicato}
