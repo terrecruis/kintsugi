@@ -30,14 +30,6 @@
 
 Il documento è ciò che viene valutato. Le definizioni di misura servono già a M1 (previsioni) e a F2 (lo script che assegna le categorie): senza di esse le previsioni non sarebbero confrontabili con le misure.
 
-## Comandi e configurazione
-
-```bash
-git switch -c docs/revisione-documento
-cd docs && make
-pdfinfo main.pdf          # controllo dell'integrità del PDF
-```
-
 ## Risultato
 
 - PDF di 42 pagine, compilato senza errori né riferimenti mancanti.
