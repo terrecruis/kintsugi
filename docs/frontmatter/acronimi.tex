@@ -12,25 +12,41 @@
 ADR      & \textit{Architecture Decision Record}: scheda che documenta una decisione architetturale \\
 ALB      & \textit{Application Load Balancer} di AWS \\
 API      & Servizio che riceve gli ordini dal client \\
+AZ       & \textit{Availability Zone}: zona di disponibilità di AWS, un gruppo di data center indipendente dagli altri della stessa regione \\
 Blocco   & Guasto in cui il processo resta vivo ma non risponde (\textit{hang}) \\
+Bootstrap & Tecnica statistica che stima l'incertezza di una misura ricampionando i dati osservati \\
+Broker   & Programma che gestisce le code di messaggi; nel progetto è RabbitMQ \\
 Budget di errore & Indisponibilità ammessa da uno SLO in un periodo (con 99,9\% su 30 giorni: 43,2 minuti) \\
 CNPG     & CloudNativePG: operatore Kubernetes che gestisce cluster PostgreSQL con failover \\
+Control plane & Insieme dei componenti che governano il cluster Kubernetes (API server, scheduler, controller) \\
 Crash    & Guasto in cui il processo termina \\
 DLQ      & \textit{Dead-letter queue}: coda dei messaggi che non è stato possibile elaborare \\
+EBS      & \textit{Elastic Block Store}: dischi di rete di AWS \\
+EC2      & \textit{Elastic Compute Cloud}: macchine virtuali di AWS \\
 EKS      & \textit{Elastic Kubernetes Service}: Kubernetes gestito da AWS \\
 Failover & Promozione automatica dello standby a primario quando il primario cade \\
 HPA      & \textit{Horizontal Pod Autoscaler}: componente di Kubernetes che varia il numero di pod \\
+IQR      & \textit{Interquartile range}: intervallo tra il primo e il terzo quartile \\
+JMeter   & Generatore di carico usato come client; lavora a modello aperto \\
 KEDA     & \textit{Kubernetes Event-Driven Autoscaling}: autoscaling basato su eventi, come la lunghezza di una coda \\
 kind     & \textit{Kubernetes in Docker}: cluster Kubernetes locale fatto di container \\
+kubelet  & Agente di Kubernetes su ogni nodo: avvia i container ed esegue le sonde \\
+Modello aperto & Generazione di carico in cui le richieste partono a ritmo fisso, indipendentemente dalle risposte; evita la \textit{coordinated omission} \\
 MTBF     & \textit{Mean Time Between Failures}: tempo medio tra due guasti \\
 MTTR     & \textit{Mean Time To Repair}: tempo medio di ripristino \\
+NodePort & Tipo di Service che espone un servizio su una porta fissa di ogni nodo \\
 Pod      & Unità minima di esecuzione in Kubernetes \\
+Prometheus & Sistema di raccolta di metriche; Grafana ne visualizza i dati \\
 RPO      & \textit{Recovery Point Objective}: quantità di dati che si accetta di perdere in un guasto \\
 RQ       & \textit{Research Question}: domanda di ricerca \\
 Run      & Singola esecuzione di un esperimento \\
+Service  & Oggetto di Kubernetes che dà un indirizzo stabile a un gruppo di pod e distribuisce le richieste tra quelli pronti \\
 SLI      & \textit{Service Level Indicator}: misura del livello di servizio \\
 SLO      & \textit{Service Level Objective}: obiettivo fissato su uno SLI \\
+Sonda    & Controllo periodico del kubelet: \textit{liveness} (``sei vivo?'', se fallisce il container è riavviato) e \textit{readiness} (``sei pronto?'', se fallisce il pod esce dal Service) \\
 SPOF     & \textit{Single Point Of Failure}: punto unico di guasto \\
+Toxiproxy & Proxy che inietta ritardi ed errori di rete su richiesta; usato per F5 \\
+UUID     & \textit{Universally Unique Identifier}: identificativo casuale, generato dal client per ogni ordine \\
 WAL      & \textit{Write-Ahead Log}: log delle transazioni di PostgreSQL, usato per recupero e replica \\
 Worker   & Processo che legge gli ordini dalla coda e li scrive nel database (V3, V5) \\
 \end{longtable}

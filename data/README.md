@@ -11,6 +11,6 @@ Ogni run salva una cartella `data/<ambiente>/<run-id>/` con:
 | `db.csv` | ordini salvati: ID, istante di ricezione (API), istante di commit (database) |
 | `events.csv` | eventi Kubernetes: pod terminato, creato, pronto |
 | `prometheus.csv` | lunghezza ed età della coda, riprove, dead-letter, CPU e memoria |
-| `categorie.csv` | categoria assegnata a ogni ID ordine (§ 5.3) |
+| `categorie.csv` | categoria assegnata a ogni ID ordine (documento di architettura, capitolo «Protocollo di misura», sezione «Categorie degli ordini») |
 
 L'archivio della campagna si conserva fuori dal repository (es. allegato a una release GitHub o su un drive condiviso), indicando qui dove si trova.

@@ -33,6 +33,12 @@ docs/*.fls
 docs/*.fdb_latexmk
 docs/*.synctex.gz
 
+# Assistenti AI (configurazioni locali, non fanno parte del progetto)
+.claude/
+CLAUDE.md
+.agents/
+skills-lock.json
+
 # Sistema
 .DS_Store
 .idea/

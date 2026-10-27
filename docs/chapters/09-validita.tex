@@ -1,23 +1,35 @@
-\chapter{I limiti degli esperimenti}
+\chapter{Minacce alla validità}
 \label{cap:validita}
 
-Nessun esperimento è perfetto. Questi sono i limiti che conosciamo e come li riduciamo.
+Nessun esperimento è privo di limiti. Le minacce note sono classificate secondo le quattro categorie usuali e accompagnate dalla contromisura adottata.
+
+\begin{description}
+  \item[Interna] un fattore diverso da quello studiato può causare la differenza osservata.
+  \item[Di costrutto] la misura può non rappresentare ciò che si vuole misurare.
+  \item[Esterna] i risultati possono non valere fuori dall'ambiente di prova.
+  \item[Delle conclusioni] le conclusioni statistiche possono essere sbagliate.
+\end{description}
 
 \begin{table}[htbp]
 \centering
-\caption{Limiti e contromisure.}
+\caption{Minacce alla validità e contromisure.}
 \label{tab:limiti}
-\begin{tabularx}{\linewidth}{@{}LL@{}}
+\begin{tabularx}{\linewidth}{@{}lLL@{}}
 \toprule
-\textbf{Limite} & \textbf{Cosa facciamo} \\
+\textbf{Tipo} & \textbf{Minaccia} & \textbf{Contromisura} \\
 \midrule
-Sullo stesso computer girano sia il sistema sia il generatore di ordini, che si rubano risorse & Scartiamo gli esperimenti con il computer sovraccarico \\
-Un esperimento può lasciare ``tracce'' che influenzano il successivo & Riportiamo tutto allo stato iniziale prima di ogni esperimento \\
-In locale le tre macchine sono finte: condividono lo stesso hardware & Ripetiamo una parte degli esperimenti su AWS, con macchine vere \\
-Il servizio è molto più semplice di uno reale & Le conclusioni riguardano i meccanismi (accorgersi, riparare, smaltire), non i numeri esatti \\
-Un risultato singolo può essere un caso & Ripetiamo 10 volte le prove importanti \\
-Si rischia di ``aggiustare'' le spiegazioni dopo aver visto i dati & Scriviamo le previsioni prima \\
-Il ``cervello'' di Kubernetes (\emph{control plane}) è uno solo e fa anche da porta d'ingresso: se cadesse, niente verrebbe più riavviato e gli ordini non entrerebbero & Non lo guastiamo mai: gli esperimenti riguardano l'applicazione, non Kubernetes. In un cluster di produzione i control plane sono più di uno \\
+Interna & Sistema e generatore di carico girano sullo stesso computer e si contendono CPU e memoria & Soglia di CPU fissata in F4; run saturi o senza memoria scartati \\
+Interna & Un run può lasciare tracce (code non vuote, pod degradati) che influenzano il successivo & Reset verificato prima di ogni run; ordine casuale dei run \\
+Interna & Il guasto di un componente può dipendere da dove Kubernetes ha collocato i pod & Regole di piazzamento esplicite (D0006); topologia verificata al reset \\
+Di costrutto & Un generatore a modello chiuso smetterebbe di inviare durante il guasto, nascondendolo & Carico a modello aperto; ritmo inviato controllato entro $\pm5\%$ \\
+Di costrutto & Un pod ``pronto'' non significa servizio ripristinato & Ripristino definito come 5~s consecutivi disponibili in accettazione e completamento \\
+Di costrutto & La soglia del 99\% al secondo è severa a ritmi bassi & Si riportano anche le richieste fallite per guasto, indipendenti dalla soglia \\
+Di costrutto & Su AWS gli istanti di ricezione e scrittura vengono da nodi con orologi diversi & Sfasamento verificato e dichiarato prima delle sessioni (D0005) \\
+Esterna & In locale i nodi sono container sullo stesso hardware: la perdita di un nodo è simulata & Parte degli esperimenti ripetuta su AWS con macchine reali (RQ6) \\
+Esterna & Il servizio è molto più semplice di uno reale & Le conclusioni riguardano i meccanismi (rilevamento, riparazione, smaltimento), non i valori assoluti \\
+Esterna & Il control plane è unico e funge anche da punto d'ingresso: se cadesse, nessun pod verrebbe riavviato e gli ordini non entrerebbero & Non viene mai guastato; gli esperimenti riguardano l'applicazione, non Kubernetes. In produzione il control plane è replicato \\
+Delle conclusioni & Un risultato singolo può essere casuale & 10 ripetizioni per i run con guasto; intervalli di confidenza bootstrap \\
+Delle conclusioni & Si possono adattare le spiegazioni dopo aver visto i dati & Previsioni registrate prima delle misure (tag \texttt{m1}) \\
 \bottomrule
 \end{tabularx}
 \end{table}

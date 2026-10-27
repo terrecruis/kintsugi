@@ -1,38 +1,95 @@
-\chapter{I guasti che proviamo}
+\chapter{Modello dei guasti}
 \label{cap:guasti}
 
-Rompiamo un pezzo alla volta, mentre arrivano ordini, e osserviamo come il sistema si ripara da solo. Nessun intervento a mano.
+Ogni run inietta \textbf{un solo guasto}, sotto carico e in un istante registrato, e osserva il ripristino automatico del sistema: nessun intervento manuale.
 
 \begin{table}[htbp]
 \centering
-\caption{I sette guasti.}
+\caption{I sette guasti: classe, meccanismo di iniezione, versioni e domande di ricerca interessate.}
 \label{tab:guasti}
-\begin{tabularx}{\linewidth}{@{}lLl@{}}
+\begin{tabularx}{\linewidth}{@{}lLllll@{}}
 \toprule
-\textbf{ID} & \textbf{Cosa rompiamo} & \textbf{Versioni} \\
+\textbf{ID} & \textbf{Guasto} & \textbf{Classe} & \textbf{Meccanismo} & \textbf{Versioni} & \textbf{RQ} \\
 \midrule
-F1 & Spegniamo all'improvviso una copia dell'API & V1, V2, V3 \\
-F2 & Spegniamo tutti i worker & V3 \\
-F3 & Spegniamo la coda & V3 \\
-F4 & Spegniamo il database & V1--V4 \\
-F5 & Rallentiamo il collegamento con il database & V2, V3 \\
-F6 & Spegniamo un'intera macchina \textit{(facoltativo)} & V2, V3 \\
-F7 & ``Congeliamo'' una copia dell'API: accesa, ma non risponde & V2 \\
+F1 & Arresto improvviso di un'istanza dell'API & crash & \texttt{SIGKILL} & V1, V2, V3 & 1, 2, 3 \\
+F2 & Arresto di tutti i worker & crash & \texttt{SIGKILL} & V3 & 2, 3 \\
+F3 & Arresto del broker & crash & \texttt{SIGKILL} & V3 & 2, 3 \\
+F4 & Arresto del database (in V4: del primario) & crash & \texttt{SIGKILL} & V1--V4 & 1, 2, 4 \\
+F5 & Latenza verso il database & degrado & Toxiproxy & V2, V3 & 2 \\
+F6 & Perdita di un nodo \textit{(facoltativo)} & nodo & arresto del nodo & V2, V3 & 3, 6 \\
+F7 & Blocco di un'istanza dell'API, con due configurazioni delle sonde & blocco & \texttt{SIGSTOP} & V2 & 3 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\section{Spegnere e congelare non sono la stessa cosa}
+\section{Crash e blocco}
+
+Le due classi principali si comportano in modo opposto rispetto a Kubernetes:
 
 \begin{itemize}
-  \item Un programma che \textbf{si spegne} viene notato subito, e Kubernetes lo riavvia.
-  \item Un programma che \textbf{si congela} sembra ancora acceso: Kubernetes se ne accorge solo con i suoi controlli periodici (``sei vivo?''). Quanto ci mette dipende da quanto spesso controlla: è quello che misuriamo con F7.
+  \item un processo che \textbf{termina} (crash) viene rilevato quasi subito, perché il container esce e il kubelet lo riavvia;
+  \item un processo \textbf{bloccato} (\textit{hang}) resta in esecuzione: il kubelet se ne accorge solo quando la sonda di liveness fallisce per un numero stabilito di volte di fila. Il tempo di rilevamento dipende quindi da periodo e soglia delle sonde, ed è ciò che F7 misura con due configurazioni (tabella~\ref{tab:parametri}).
 \end{itemize}
 
-\section{Come li provochiamo}
+La figura~\ref{fig:anatomia} scompone il fermo nelle sue fasi. La durata delle barre è indicativa: i valori previsti sono nel capitolo~\ref{cap:previsioni}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=0.25cm, y=0.9cm, every node/.append style={font=\scriptsize},
+  seg/.style={draw=white, line width=0.6pt, minimum height=0.55cm, inner sep=0pt, anchor=west},
+  ril/.style={seg, fill=accento!75, text=white},
+  rav/.style={seg, fill=unina, text=white},
+  pro/.style={seg, fill=unina!45},
+  sta/.style={seg, fill=grigiotesto!25}]
+\newcommand{\segm}[5]{\node[#1, minimum width=#3*0.25cm] at (#2,#4) {#5};}
+% Riga 1: crash
+\node[anchor=east, font=\small\bfseries, text=unina] at (-0.6,0) {Crash (F1)};
+\segm{ril}{0}{1}{0}{}
+\segm{rav}{1}{6}{0}{}
+\segm{pro}{7}{5}{0}{}
+\segm{sta}{12}{5}{0}{}
+% Riga 2: blocco, sonde veloci
+\node[anchor=east, font=\small\bfseries, text=unina, align=right] at (-0.6,-1) {Blocco (F7)\\[-1pt]{\scriptsize\normalfont sonde veloci}};
+\segm{ril}{0}{6}{-1}{}
+\segm{rav}{6}{6}{-1}{}
+\segm{pro}{12}{5}{-1}{}
+\segm{sta}{17}{5}{-1}{}
+% Riga 3: blocco, sonde standard
+\node[anchor=east, font=\small\bfseries, text=unina, align=right] at (-0.6,-2) {Blocco (F7)\\[-1pt]{\scriptsize\normalfont sonde standard}};
+\segm{ril}{0}{30}{-2}{periodo $\times$ soglia}
+\segm{rav}{30}{6}{-2}{}
+\segm{pro}{36}{5}{-2}{}
+\segm{sta}{41}{5}{-2}{}
+% Asse e istanti
+\draw[vita] (0,0.55) -- (0,-2.6);
+\fill[accento] (0,0.55) circle (2.2pt);
+\node[text=accento, above] at (0,0.6) {guasto $t_g$};
+\draw[-{Latex}, grigiotesto] (0,-2.6) -- (47,-2.6) node[right] {tempo};
+\foreach \r/\e in {0/17, -1/22, -2/46} {
+  \fill[accento] (\e,\r) circle (2.2pt);
+}
+\node[text=accento, anchor=west] at (46.3,-2) {$t_r$};
+\node[etichetta, anchor=west] at (22.6,-1) {ripristinato $t_r$};
+\node[etichetta, anchor=west] at (17.6,0) {ripristinato $t_r$};
+% Legenda
+\foreach \s/\t/\x in {ril/rilevamento/0, rav/riavvio/10, pro/ritorno a pronto/20, sta/5 s di servizio stabile/32} {
+  \node[\s, minimum width=0.3cm, minimum height=0.25cm] at (\x,-3.5) {};
+  \node[anchor=west, etichetta] at (\x+1.5,-3.5) {\t};
+}
+\end{tikzpicture}
+\caption{Anatomia di un fermo: rilevamento, riavvio, ritorno a pronto e 5 secondi di servizio stabile. Nel blocco il rilevamento dipende dalla configurazione delle sonde.}
+\label{fig:anatomia}
+\end{figure}
+
+Con più repliche (V2) il servizio non attende il riavvio: la replica guasta esce dal Service quando fallisce la sonda di readiness, e le altre continuano a rispondere. Il fermo visto dal client si riduce così alle richieste già inviate alla replica guasta e a quelle arrivate prima della sua esclusione.
+
+\section{Iniezione}
+
+L'iniezione segue D0016:
 
 \begin{itemize}
-  \item Usiamo un vero ``spegnimento brusco'' del programma, non lo spegnimento ordinato che Kubernetes offre (che non è un guasto ma una chiusura gentile).
-  \item Il comando parte dalla macchina simulata che ospita il programma: dall'interno del programma stesso il sistema operativo lo ignorerebbe.
-  \item Registriamo l'istante esatto del guasto, al millesimo di secondo.
+  \item i segnali \texttt{SIGKILL} (crash) e \texttt{SIGSTOP} (blocco) sono inviati dal nodo che ospita il processo (\texttt{docker exec} sul container del nodo di kind). Non si usa \texttt{kubectl delete pod}, che è una terminazione ordinata e non un guasto;
+  \item il segnale non può partire dall'interno del container: il processo principale vi ha PID~1, e il kernel scarta i segnali inviati al PID~1 dal suo stesso namespace se il processo non li gestisce, compresi \texttt{SIGKILL} e \texttt{SIGSTOP}; inviati dal nodo, invece, hanno effetto;
+  \item l'istante del guasto è registrato al millisecondo sia sul computer sia nel cluster;
+  \item la latenza di F5 si attiva e disattiva tramite l'API di Toxiproxy, già presente nel percorso verso il database in tutte le versioni.
 \end{itemize}
