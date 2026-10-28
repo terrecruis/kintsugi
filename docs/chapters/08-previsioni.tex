@@ -62,18 +62,6 @@ Il fermo previsto per un guasto si ricava dai parametri configurati (tabella~\re
 
 Ogni previsione riporta la formula con i valori usati.
 
-\section{Dal fermo alla disponibilità}
-
-La disponibilità di un componente è
-\begin{equation}
-  A = \frac{\text{MTBF}}{\text{MTBF} + \text{MTTR}}.
-\end{equation}
-L'MTTR si misura; l'MTBF invece non è misurabile, perché i guasti li iniettiamo noi, ed è quindi un'\emph{ipotesi dichiarata} (per esempio un guasto al giorno per componente). Il fermo mensile atteso si ottiene sommando i contributi dei singoli guasti:
-\begin{equation}
-  U_{\text{mese}} = \sum_i \lambda_i \cdot D_i ,
-\end{equation}
-con $\lambda_i$ frequenza ipotizzata del guasto $i$ in un mese e $D_i$ fermo misurato. Il risultato si confronta con il budget di errore dello SLO al 99,9\%, pari a 43,2 minuti su 30 giorni (D0017), e si esprime anche in ``numero di nove''.
-
 \section{Ipotesi}
 \label{sec:ipotesi}
 
@@ -161,3 +149,41 @@ I numeri della tabella dipendono dalle ipotesi; le relazioni tra versioni no, e 
   \item \textbf{RQ5.} Sotto W2, V5 sta tra V3 con 1 worker e V3 con 10 worker sia per arretrato massimo sia per costo in worker-secondi. Il ritardo di V5 rispetto a V3 con 10 worker è il tempo di reazione di KEDA più l'avvio dei worker.
   \item \textbf{RQ6.} Su AWS il fermo di F1 su V2 è più lungo che in locale, perché il bilanciatore ALB toglie una copia con i propri controlli di salute, più lenti di quelli del Service. I risultati che non dipendono dai tempi (zero ordini persi in V3) si ripetono uguali.
 \end{itemize}
+
+\section{Dal fermo alla disponibilità}
+\label{sec:disponibilita}
+
+\paragraph{A cosa serve.} Un fermo di 4~s, da solo, non dice se il servizio è buono o cattivo: dipende da quante volte il guasto si ripete. Questa sezione porta i secondi misurati sulla scala usata per i servizi reali, la disponibilità del 99,9\% (D0017), così guasti e versioni diverse si confrontano sullo stesso metro.
+
+\paragraph{Il budget di errore.} Un mese di 30 giorni ha 43\,200 minuti. Con l'obiettivo del 99,9\%, il servizio può restare fermo per lo 0,1\% del tempo:
+\[
+B = 0{,}001 \cdot 43\,200 \text{ min} = 43{,}2 \text{ min} = 2592 \text{ s al mese.}
+\]
+Ogni guasto ``consuma'' una parte di questo budget.
+
+\paragraph{Quanti guasti si possono sopportare.} Quante volte al mese i guasti avverranno davvero non si può misurare, perché li provochiamo noi. Per questo la domanda si rovescia: quanti guasti di un certo tipo può sopportare una versione prima di esaurire il budget?
+\[
+\text{guasti sopportabili al mese} = \frac{B}{D} = \frac{2592 \text{ s}}{D}
+\]
+Si usano solo fermi misurati, senza ipotesi sulla frequenza: è il lettore a giudicare se quel numero è realistico. La tabella~\ref{tab:sopportabili} mostra il calcolo con alcuni fermi previsti; nel report si ripete con quelli misurati.
+
+\begin{table}[htbp]
+\centering
+\caption{Guasti sopportabili al mese con l'obiettivo del 99,9\%, calcolati sui fermi previsti.}
+\label{tab:sopportabili}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Caso} & \textbf{Fermo $D$} & \textbf{Guasti sopportabili al mese} \\
+\midrule
+F1 su V1 & 4~s & $\approx 650$ \\
+F1 su V2 & 1,5~s & $\approx 1700$ \\
+F4 su V1 e V2 & 8~s & $\approx 320$ \\
+F7, sonde veloci & 4~s & $\approx 650$ \\
+F7, sonde standard & 31~s & $\approx 80$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Per esempio, con le sonde standard bastano circa 80 blocchi al mese (meno di 3 al giorno) per esaurire il budget; con quelle veloci ne servono circa 650.
+
+\paragraph{Nota: la formula classica.} La disponibilità si scrive di solito come $A = \text{MTBF} / (\text{MTBF} + \text{MTTR})$, dove l'MTTR è il fermo medio e l'MTBF il tempo medio tra due guasti. Qui l'MTBF sarebbe solo un'ipotesi, per questo si preferisce il calcolo dei guasti sopportabili. Se nel report si vuole stimare il fermo di un mese con frequenze ipotizzate $f_i$ (guasti di tipo $i$ al mese), basta sommare i contributi, $U = \sum_i f_i \cdot D_i$, e dichiarare le $f_i$ come ipotesi.

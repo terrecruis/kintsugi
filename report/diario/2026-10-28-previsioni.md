@@ -1,6 +1,6 @@
 # 2026-10-28 — Previsioni e valori dei carichi
 
-**Chi:** Francesco (con Claude Code) · **Fase:** F1 · **Durata:** ? h · **Issue:** #11
+**Chi:** Francesco (con Claude Code) · **Fase:** F1 · **Durata:** 3 h · **Issue:** #11
 
 ## Cosa abbiamo fatto
 
@@ -19,6 +19,10 @@ Scritte tutte le previsioni nel capitolo 8 del documento (versione 0.9) e fissat
 | F5 | Latenza di **200 ms** per 60 s; timeout di scrittura del worker a 1,5 s |
 
 Aggiunta anche la sezione 8.1 «Le grandezze in breve» (λ, μ, ρ, N, $t_g$, $t_r$, D) con tre esempi numerici semplici.
+
+Riscritta e spostata in fondo al capitolo la sezione «Dal fermo alla disponibilità»: invece di ipotizzare l'MTBF, calcola quanti guasti al mese una versione sopporta prima di esaurire il budget di errore (43,2 min = 2592 s): `guasti sopportabili = 2592 s / D`. La formula con l'MTBF resta come nota; la frequenza dei guasti si chiama ora $f_i$, per non confonderla con λ (ritmo degli ordini).
+
+Rileggendo l'intero documento sono emerse alcune incoerenze, raccolte nell'issue #20: tre (ripristino unico per accettazione e completamento, liveness o readiness in F7, tempi di rilevamento di F7) vanno corrette prima del tag `m1`.
 
 ## Perché
 
